@@ -1,7 +1,8 @@
 import cors from "cors";
 import express from "express";
 import path from "node:path";
-import { videoInputSchema } from "../shared/types";
+import { batchRenderSchema, scenarioSchema, videoInputSchema } from "../shared/types";
+import { buildVideoIdeas } from "../shared/contentEngine";
 import { enqueueRender } from "./queue";
 import { getJob, listJobs, loadJobs } from "./jobStore";
 
@@ -40,6 +41,30 @@ app.post("/api/render", async (req, res) => {
 
   const job = await enqueueRender(parsed.data);
   res.status(202).json({ job });
+});
+
+app.post("/api/ideas", (req, res) => {
+  const parsed = scenarioSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid scenario", details: parsed.error.flatten() });
+    return;
+  }
+
+  res.json({ videos: buildVideoIdeas(parsed.data) });
+});
+
+app.post("/api/render/batch", async (req, res) => {
+  const parsed = batchRenderSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid batch", details: parsed.error.flatten() });
+    return;
+  }
+
+  const jobs = [];
+  for (const video of parsed.data.videos) {
+    jobs.push(await enqueueRender(video));
+  }
+  res.status(202).json({ jobs });
 });
 
 app.use(express.static(path.resolve("dist/dashboard")));
