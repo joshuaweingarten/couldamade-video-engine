@@ -238,6 +238,43 @@ app.delete("/api/schedule/entries/:id", async (req, res) => {
   res.status(deleted ? 204 : 404).send(deleted ? undefined : { error: "Schedule entry not found" });
 });
 
+app.post("/api/content/tts", async (req, res) => {
+  const text = typeof req.body?.text === "string" ? req.body.text.slice(0, 4096) : "";
+  if (!text.trim()) {
+    res.status(400).json({ error: "Missing text" });
+    return;
+  }
+  if (!process.env.OPENAI_API_KEY) {
+    res.status(501).json({ error: "Set OPENAI_API_KEY in Replit Secrets to enable AI voiceover." });
+    return;
+  }
+
+  const speech = await fetch("https://api.openai.com/v1/audio/speech", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: process.env.TTS_MODEL ?? "gpt-4o-mini-tts",
+      voice: process.env.TTS_VOICE ?? "coral",
+      input: text,
+      instructions: "Speak like a clear, energetic short-form finance narrator.",
+      response_format: "mp3"
+    })
+  });
+
+  if (!speech.ok) {
+    res.status(502).json({ error: "Voice generation failed", details: await speech.text() });
+    return;
+  }
+
+  const audio = Buffer.from(await speech.arrayBuffer());
+  res.setHeader("Content-Type", "audio/mpeg");
+  res.setHeader("Cache-Control", "no-store");
+  res.send(audio);
+});
+
 app.use(express.static(path.resolve("dist/dashboard")));
 
 app.listen(PORT, "0.0.0.0", () => {
