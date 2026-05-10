@@ -373,6 +373,26 @@ textarea:focus {
   font-size: 12px;
 }
 
+.library-section {
+  display: grid;
+  gap: 10px;
+}
+
+.library-section > h3 {
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.library-copy {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .spin {
   animation: spin 1s linear infinite;
 }
