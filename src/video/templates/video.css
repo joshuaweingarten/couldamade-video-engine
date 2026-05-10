@@ -1,0 +1,184 @@
+@font-face {
+  font-family: "Bebas Neue";
+  src: url("/fonts/BebasNeue-Regular.woff2") format("woff2");
+  font-weight: 400 900;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("/fonts/JetBrainsMono-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("/fonts/JetBrainsMono-Bold.woff2") format("woff2");
+  font-weight: 700 900;
+  font-display: block;
+}
+
+.video-frame {
+  background: #050706;
+  color: white;
+  overflow: hidden;
+  font-family: "Bebas Neue", Impact, sans-serif;
+}
+
+.grid-bg {
+  position: absolute;
+  inset: 0;
+  opacity: 0.22;
+  background-image:
+    linear-gradient(rgba(0, 255, 136, 0.18) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 136, 0.18) 1px, transparent 1px);
+  background-size: 94px 94px;
+}
+
+.chart-line {
+  position: absolute;
+  inset: 0;
+  filter: drop-shadow(0 0 22px rgba(0, 255, 136, 0.45));
+}
+
+.chart-line path {
+  fill: none;
+  stroke: #28f296;
+  stroke-width: 34;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(0, 255, 136, 0.12), transparent 32%),
+    radial-gradient(circle at 50% 50%, transparent 28%, rgba(0, 0, 0, 0.78) 100%);
+}
+
+.top-market {
+  position: absolute;
+  top: 116px;
+  left: 76px;
+  font-family: "JetBrains Mono", monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.ticker {
+  font-size: 56px;
+  font-weight: 800;
+}
+
+.date {
+  margin-top: 10px;
+  color: rgba(255, 255, 255, 0.48);
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.hero-words {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  justify-content: center;
+  gap: 18px 34px;
+  padding: 0 92px;
+  text-align: center;
+  text-transform: uppercase;
+  font-size: 138px;
+  line-height: 0.9;
+  letter-spacing: 0;
+  text-shadow: 0 12px 34px rgba(0, 0, 0, 0.55);
+}
+
+.hero-words span {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.center-stack {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 34px;
+  padding: 0 90px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.eyebrow {
+  font-family: "JetBrains Mono", monospace;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+}
+
+.big-money,
+.pause-amount {
+  color: #28f296;
+  font-size: 210px;
+  line-height: 0.85;
+  text-shadow: 0 0 36px rgba(40, 242, 150, 0.34);
+}
+
+.company {
+  max-width: 920px;
+  color: white;
+  font-size: 150px;
+  line-height: 0.9;
+  overflow-wrap: anywhere;
+}
+
+.pause {
+  gap: 54px;
+}
+
+.result-money {
+  color: #28f296;
+  font-size: 230px;
+  line-height: 0.85;
+  text-shadow: 0 0 48px rgba(40, 242, 150, 0.45);
+}
+
+.gain {
+  font-family: "JetBrains Mono", monospace;
+  color: #28f296;
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.perspective {
+  gap: 12px;
+}
+
+.perspective-line {
+  font-size: 166px;
+  line-height: 0.92;
+}
+
+.accent {
+  color: #28f296;
+}
+
+.brand {
+  font-family: "JetBrains Mono", monospace;
+  color: #28f296;
+  font-size: 46px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.cta-text {
+  font-size: 132px;
+  line-height: 0.9;
+}
