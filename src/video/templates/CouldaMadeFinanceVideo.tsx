@@ -1,5 +1,6 @@
 import {
   AbsoluteFill,
+  Audio,
   interpolate,
   spring,
   useCurrentFrame,
@@ -71,7 +72,8 @@ export function CouldaMadeFinanceVideo(input: VideoInput) {
   });
 
   return (
-    <AbsoluteFill className="video-frame">
+    <AbsoluteFill className="video-frame" style={{ "--accent": input.accentColor } as React.CSSProperties}>
+      {input.voiceoverAudioUrl && <Audio src={input.voiceoverAudioUrl} />}
       <div className="grid-bg" />
       <svg className="chart-line" viewBox="0 0 1080 1920">
         <path d={currencyGrowthPath(frame, 10)} />
@@ -89,11 +91,9 @@ export function CouldaMadeFinanceVideo(input: VideoInput) {
             transform: `scale(${0.96 + pulse * 0.04})`
           }}
         >
-          <span>this</span>
-          <span>is</span>
-          <span>what</span>
-          <span>would&apos;ve</span>
-          <span>happened</span>
+          {input.hook.split(" ").map((word, index) => (
+            <span key={`${word}-${index}`}>{word}</span>
+          ))}
         </div>
       </SceneShell>
 
@@ -141,6 +141,8 @@ export function CouldaMadeFinanceVideo(input: VideoInput) {
           <div className="cta-text">run yours now</div>
         </div>
       </SceneShell>
+
+      <div className="disclaimer">{input.disclaimer}</div>
     </AbsoluteFill>
   );
 }
