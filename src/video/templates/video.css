@@ -20,6 +20,7 @@
 }
 
 .video-frame {
+  --accent: #28f296;
   background: #050706;
   color: white;
   overflow: hidden;
@@ -44,7 +45,7 @@
 
 .chart-line path {
   fill: none;
-  stroke: #28f296;
+  stroke: var(--accent);
   stroke-width: 34;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -124,7 +125,7 @@
 
 .big-money,
 .pause-amount {
-  color: #28f296;
+  color: var(--accent);
   font-size: 210px;
   line-height: 0.85;
   text-shadow: 0 0 36px rgba(40, 242, 150, 0.34);
@@ -143,7 +144,7 @@
 }
 
 .result-money {
-  color: #28f296;
+  color: var(--accent);
   font-size: 230px;
   line-height: 0.85;
   text-shadow: 0 0 48px rgba(40, 242, 150, 0.45);
@@ -151,7 +152,7 @@
 
 .gain {
   font-family: "JetBrains Mono", monospace;
-  color: #28f296;
+  color: var(--accent);
   font-size: 34px;
   font-weight: 800;
   letter-spacing: 0.14em;
@@ -167,12 +168,12 @@
 }
 
 .accent {
-  color: #28f296;
+  color: var(--accent);
 }
 
 .brand {
   font-family: "JetBrains Mono", monospace;
-  color: #28f296;
+  color: var(--accent);
   font-size: 46px;
   font-weight: 800;
   letter-spacing: 0.14em;
@@ -181,4 +182,18 @@
 .cta-text {
   font-size: 132px;
   line-height: 0.9;
+}
+
+.disclaimer {
+  position: absolute;
+  right: 56px;
+  bottom: 42px;
+  left: 56px;
+  font-family: "JetBrains Mono", monospace;
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
 }
