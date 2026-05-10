@@ -4,5 +4,7 @@ dist
 .env.local
 renders/*.mp4
 renders/*.webm
+renders/*.srt
+renders/*.json
 data/jobs.json
 .DS_Store
