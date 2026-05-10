@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { Download, FileText, Layers, Play, RefreshCw, Send, Sparkles } from "lucide-react";
-import type { CreativeAngle, RenderJob, ScenarioInput, VideoInput } from "../shared/types";
+import { CalendarPlus, Download, FileText, Layers, Play, RefreshCw, Send, Sparkles } from "lucide-react";
+import type { ContentItem, CreativeAngle, RenderJob, ScenarioInput, ScheduleEntry, VideoInput } from "../shared/types";
 import "./styles.css";
 
 const defaultScenario: ScenarioInput = {
@@ -28,15 +28,23 @@ const angleOptions: Array<{ value: CreativeAngle; label: string }> = [
 function App() {
   const [scenario, setScenario] = useState<ScenarioInput>(defaultScenario);
   const [ideas, setIdeas] = useState<VideoInput[]>([]);
+  const [contentItems, setContentItems] = useState<ContentItem[]>([]);
+  const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
   const [jobs, setJobs] = useState<RenderJob[]>([]);
   const [busy, setBusy] = useState(false);
   const activeJob = useMemo(() => jobs.find((job) => job.status === "queued" || job.status === "rendering"), [jobs]);
   const completedCount = jobs.filter((job) => job.status === "done").length;
 
   async function refreshJobs() {
-    const res = await fetch("/api/jobs");
-    const data = (await res.json()) as { jobs: RenderJob[] };
+    const [jobsRes, contentRes, scheduleRes] = await Promise.all([
+      fetch("/api/jobs"),
+      fetch("/api/content/items"),
+      fetch("/api/schedule/entries")
+    ]);
+    const data = (await jobsRes.json()) as { jobs: RenderJob[] };
     setJobs(data.jobs);
+    setContentItems((await contentRes.json()) as ContentItem[]);
+    setSchedule((await scheduleRes.json()) as ScheduleEntry[]);
   }
 
   useEffect(() => {
@@ -74,6 +82,11 @@ function App() {
         body: JSON.stringify(video)
       });
       if (!res.ok) throw new Error(await res.text());
+      await fetch("/api/videos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(video)
+      });
       await refreshJobs();
     } finally {
       setBusy(false);
@@ -89,6 +102,11 @@ function App() {
         body: JSON.stringify({ videos: ideas })
       });
       if (!res.ok) throw new Error(await res.text());
+      await Promise.all(ideas.map((video) => fetch("/api/videos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(video)
+      })));
       await refreshJobs();
     } finally {
       setBusy(false);
@@ -106,6 +124,33 @@ function App() {
         : [...prev.angles, angle];
       return { ...prev, angles: angles.length ? angles : [angle] };
     });
+  }
+
+  async function saveIdeasToLibrary() {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/content/generate-finance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(scenario)
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const items = (await res.json()) as ContentItem[];
+      setIdeas(items.map((item) => item.video));
+      await refreshJobs();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function scheduleContent(item: ContentItem) {
+    const scheduledFor = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    await fetch("/api/schedule/entries", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contentItemId: item.id, platform: item.platform, scheduledFor })
+    });
+    await refreshJobs();
   }
 
   return (
@@ -194,6 +239,10 @@ function App() {
               {busy ? <RefreshCw size={18} className="spin" /> : <Sparkles size={18} />}
               Generate video ideas
             </button>
+            <button className="secondary-button wide" disabled={busy} type="button" onClick={saveIdeasToLibrary}>
+              <FileText size={18} />
+              Save ideas to content library
+            </button>
           </form>
         </section>
 
@@ -239,6 +288,40 @@ function App() {
         </div>
 
         <div className="job-list">
+          {contentItems.length > 0 && (
+            <div className="library-section">
+              <h3>Content library</h3>
+              {contentItems.slice(0, 8).map((item) => (
+                <article className="job-card" key={item.id}>
+                  <div className="job-main">
+                    <div>
+                      <h3>{item.hook}</h3>
+                      <p>{item.platform} - {item.status}</p>
+                    </div>
+                    <button className="icon-button compact" type="button" onClick={() => scheduleContent(item)} aria-label="Schedule content">
+                      <CalendarPlus size={18} />
+                    </button>
+                  </div>
+                  <p className="library-copy">{item.caption}</p>
+                </article>
+              ))}
+            </div>
+          )}
+          {schedule.length > 0 && (
+            <div className="library-section">
+              <h3>Schedule</h3>
+              {schedule.slice(0, 8).map((entry) => (
+                <article className="job-card" key={entry.id}>
+                  <div className="job-main">
+                    <div>
+                      <h3>{entry.platform}</h3>
+                      <p>{new Date(entry.scheduledFor).toLocaleString()} - {entry.status}</p>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
           {jobs.length === 0 ? (
             <div className="empty">
               <Play size={26} />
