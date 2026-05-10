@@ -1,0 +1,8 @@
+node_modules
+dist
+.env
+.env.local
+renders/*.mp4
+renders/*.webm
+data/jobs.json
+.DS_Store
