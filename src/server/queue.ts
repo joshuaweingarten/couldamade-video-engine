@@ -43,7 +43,9 @@ async function processQueue(): Promise<void> {
           status: "done",
           progress: 1,
           outputPath: result.outputPath,
-          outputUrl: result.outputUrl
+          outputUrl: result.outputUrl,
+          captionUrl: result.captionUrl,
+          metadataUrl: result.metadataUrl
         });
       } catch (error) {
         await updateJob(id, {
