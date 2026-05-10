@@ -1,17 +1,17 @@
-# CouldaMade Video Engine
+# CouldaMade Video Factory
 
-A Replit-friendly video rendering app for generating short-form finance videos.
+A Replit-friendly app for generating short-form finance videos from investment
+scenarios. It replaces fragile browser screen recording with a deterministic
+Remotion and ffmpeg render pipeline.
 
-This repo uses a deterministic render pipeline:
+## What It Does
 
-- React dashboard for creating render jobs
-- Express API for job queue/status
-- Remotion templates for frame-perfect video composition
-- ffmpeg-backed H.264 MP4 rendering through Remotion
-- Local font wiring so preview and export stay consistent
-
-It intentionally avoids browser screenshot recording. The rendered MP4 is built
-from known frames, which is much more reliable for 100+ videos/month.
+- Turns one scenario into multiple video ideas, hooks, scripts, and captions.
+- Queues one video or a batch of videos.
+- Renders 9:16 H.264 MP4 files with consistent fonts and layout.
+- Writes `.srt` captions and `.json` metadata next to every finished video.
+- Keeps a local render history that survives app restarts on Replit.
+- Exposes API endpoints so another CouldaMade app can create videos later.
 
 ## Quick Start
 
@@ -20,8 +20,8 @@ npm install
 npm run dev
 ```
 
-Open the Replit webview. Queue a render from the dashboard. Finished videos
-appear in the job list with a download link.
+Open the Replit webview. Enter a scenario, generate ideas, then queue one or all
+of the generated videos.
 
 ## Replit Setup
 
@@ -37,6 +37,13 @@ npm install
 npm run dev
 ```
 
+For deployment, use:
+
+```bash
+npm run build
+npm start
+```
+
 ## Fonts
 
 Add these files under `public/fonts/`:
@@ -45,13 +52,40 @@ Add these files under `public/fonts/`:
 - `JetBrainsMono-Regular.woff2`
 - `JetBrainsMono-Bold.woff2`
 
-The template already references those local files. Local fonts are important:
-they prevent the preview/export mismatch that caused crushed text in the old
-browser capture system.
+The template references local font files so the preview and final export do not
+drift apart during server rendering.
+
+## Dashboard Workflow
+
+1. Fill in ticker, company, investment amount, current value, and starting date.
+2. Pick creative angles such as regret, shock, lesson, receipt, or comeback.
+3. Click `Generate video ideas`.
+4. Queue a single idea or click `Queue all`.
+5. Download MP4, SRT captions, and JSON metadata from the library.
 
 ## API
 
-Create a render job:
+Generate video ideas:
+
+```http
+POST /api/ideas
+Content-Type: application/json
+
+{
+  "ticker": "TSLA",
+  "company": "Tesla",
+  "assetType": "stock",
+  "amount": 1000,
+  "value": 55000,
+  "year": 2019,
+  "month": 1,
+  "day": 1,
+  "platform": "tiktok",
+  "angles": ["regret", "shock", "lesson"]
+}
+```
+
+Create one render job:
 
 ```http
 POST /api/render
@@ -66,8 +100,21 @@ Content-Type: application/json
   "year": 2019,
   "month": 1,
   "day": 1,
+  "hook": "This is what would've happened",
+  "angle": "regret",
   "voiceover": "Script text",
   "caption": "Social caption"
+}
+```
+
+Create many render jobs:
+
+```http
+POST /api/render/batch
+Content-Type: application/json
+
+{
+  "videos": []
 }
 ```
 
@@ -83,32 +130,32 @@ Fetch one job:
 GET /api/jobs/:id
 ```
 
-## Current Scope
+## Output Files
 
-The first template is `CouldaMadeFinance`, a 9:16 finance/investing short. It
-renders the core story:
+Finished renders are served from `/renders`:
 
-1. "this is what would've happened"
-2. investment setup
-3. hold/pause beat
-4. result reveal
-5. perspective beat
-6. CTA
+- `.mp4` final video
+- `.srt` captions
+- `.json` render metadata
 
-## Next Production Steps
+On Replit, completed files are stored in the local `renders/` folder and job
+history is stored in `data/jobs.json`.
 
-- Add real scenario fetching from couldamade.com.
-- Add script/caption generation.
-- Add voiceover audio generation and mix it into the Remotion render.
-- Store completed videos in S3, Cloudflare R2, or another durable file store if
-  Replit filesystem persistence is not enough.
-- Add batch creation for 10, 25, or 100 videos at a time.
+## Optional Integrations To Add Later
+
+This version is intentionally useful without paid services. The next upgrades
+can be added behind environment variables:
+
+- A market-data provider to calculate current values automatically.
+- A voice provider to generate narration audio.
+- Durable storage such as Cloudflare R2 or S3 if Replit file persistence becomes
+  limiting.
+- A scheduler that queues 25 videos per week.
 
 ## Why This Architecture
 
-The previous browser capture approach recorded the screen by repeatedly
-converting DOM to canvas. That is fragile for fonts, animation timing, audio
-sync, and MP4 compatibility.
+The old browser capture approach depended on DOM-to-canvas recording. That is
+fragile for fonts, animation timing, audio sync, and MP4 compatibility.
 
-This repo renders frames deterministically with Remotion and encodes with
-ffmpeg, which is the right foundation for a repeatable content engine.
+This repo renders known frames with Remotion and encodes them with ffmpeg, which
+is the right foundation for making 100+ videos per month.
