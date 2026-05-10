@@ -7,4 +7,5 @@ renders/*.webm
 renders/*.srt
 renders/*.json
 data/jobs.json
+data/app.json
 .DS_Store
