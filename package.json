@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently \"tsx src/server/index.ts\" \"vite --host 0.0.0.0\"",
+    "replit": "vite build && tsx src/server/index.ts",
     "server": "tsx src/server/index.ts",
     "dashboard": "vite --host 0.0.0.0",
     "render": "tsx src/server/renderCli.ts",
