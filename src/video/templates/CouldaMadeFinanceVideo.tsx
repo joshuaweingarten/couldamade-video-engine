@@ -74,6 +74,16 @@ function splitCaption(text: string): { before: string; emphasis: string; after: 
   };
 }
 
+function getBrandInitials(company: string, ticker: string): string {
+  const words = company.replace(/[^a-zA-Z0-9 ]/g, "").split(" ").filter(Boolean);
+  if (words.length >= 2) return words.slice(0, 2).map((word) => word[0]).join("").toUpperCase();
+  return ticker.slice(0, 2).toUpperCase();
+}
+
+function getScene(input: VideoInput, index: number, fallback: [number, number]) {
+  return input.scenes?.[index] ?? { text: "", startFrame: fallback[0], endFrame: fallback[1] };
+}
+
 function SceneShell({
   opacity,
   progress,
@@ -164,10 +174,20 @@ export function CouldaMadeFinanceVideo(input: VideoInput) {
   const growth = input.value / input.amount;
   const activeScene = input.scenes?.find((scene) => frame >= scene.startFrame && frame <= scene.endFrame);
   const captionOpacity = activeScene ? sceneOpacity(frame, activeScene.startFrame, activeScene.endFrame) : 0;
-  const countedValue = formatDollar(countUpValue(frame, 350, 445, input.value));
+  const scene0 = getScene(input, 0, [0, 145]);
+  const scene1 = getScene(input, 1, [135, 270]);
+  const scene2 = getScene(input, 2, [260, 360]);
+  const scene3 = getScene(input, 3, [340, 500]);
+  const scene4 = getScene(input, 4, [490, 610]);
+  const scene5 = getScene(input, 5, [600, 660]);
+  const countedValue = formatDollar(countUpValue(frame, scene3.startFrame + 10, scene3.startFrame + 105, input.value));
   const cameraX = Math.sin(frame / 58) * 18;
   const cameraY = Math.cos(frame / 72) * 24;
   const cameraScale = 1.03 + Math.sin(frame / 115) * 0.018;
+  const styleName = input.visualStyle ?? "terminal";
+  const presetName = input.qualityPreset ?? "punchy";
+  const brandColor = input.brandColor ?? input.accentColor;
+  const brandInitials = getBrandInitials(input.company, input.ticker);
 
   const pulse = spring({ frame, fps, config: { damping: 18, stiffness: 80 } });
   const resultScale = spring({
@@ -177,7 +197,10 @@ export function CouldaMadeFinanceVideo(input: VideoInput) {
   });
 
   return (
-    <AbsoluteFill className="video-frame" style={{ "--accent": input.accentColor } as React.CSSProperties}>
+    <AbsoluteFill
+      className={`video-frame style-${styleName} preset-${presetName}`}
+      style={{ "--accent": input.accentColor, "--brand": brandColor } as React.CSSProperties}
+    >
       {input.voiceoverAudioUrl && <Audio src={input.voiceoverAudioUrl} />}
       <AbsoluteFill
         className="motion-world"
@@ -193,11 +216,21 @@ export function CouldaMadeFinanceVideo(input: VideoInput) {
       </AbsoluteFill>
       <div className="vignette" />
       <div className="scanline" />
+      <div className="cold-open" style={{ opacity: sceneOpacity(frame, 0, 52) }}>
+        <span>{input.angle === "regret" ? "missed" : input.angle}</span>
+      </div>
 
-      <SceneShell opacity={sceneOpacity(frame, 0, 145)} progress={sceneProgress(frame, 0, 145)} className="scene-intro">
+      <SceneShell
+        opacity={sceneOpacity(frame, scene0.startFrame, scene0.endFrame)}
+        progress={sceneProgress(frame, scene0.startFrame, scene0.endFrame)}
+        className="scene-intro"
+      >
         <div className="top-market">
           <div className="ticker">{input.ticker.toUpperCase()}</div>
           <div className="date">{startLabel} - TODAY</div>
+        </div>
+        <div className="brand-badge">
+          <span>{brandInitials}</span>
         </div>
         <div
           className="hero-words"
@@ -213,7 +246,11 @@ export function CouldaMadeFinanceVideo(input: VideoInput) {
         </div>
       </SceneShell>
 
-      <SceneShell opacity={sceneOpacity(frame, 135, 270)} progress={sceneProgress(frame, 135, 270)} className="scene-buy">
+      <SceneShell
+        opacity={sceneOpacity(frame, scene1.startFrame, scene1.endFrame)}
+        progress={sceneProgress(frame, scene1.startFrame, scene1.endFrame)}
+        className="scene-buy"
+      >
         <div className="center-stack">
           <div className="eyebrow">if you put</div>
           <div className="big-money">{amount}</div>
@@ -230,14 +267,18 @@ export function CouldaMadeFinanceVideo(input: VideoInput) {
         </div>
       </SceneShell>
 
-      <SceneShell opacity={sceneOpacity(frame, 260, 360)} progress={sceneProgress(frame, 260, 360)} className="scene-hold">
+      <SceneShell
+        opacity={sceneOpacity(frame, scene2.startFrame, scene2.endFrame)}
+        progress={sceneProgress(frame, scene2.startFrame, scene2.endFrame)}
+        className="scene-hold"
+      >
         <div className="center-stack pause">
           <div className="eyebrow">and just held it</div>
           <div className="pause-amount">{amount}</div>
         </div>
         <div className="hold-timeline">
           {["buy", "wait", "ignore noise", "today"].map((label, index) => (
-            <div key={label} className={frame > 270 + index * 18 ? "active" : ""}>
+            <div key={label} className={frame > scene2.startFrame + 18 + index * 18 ? "active" : ""}>
               <i />
               <span>{label}</span>
             </div>
@@ -245,14 +286,18 @@ export function CouldaMadeFinanceVideo(input: VideoInput) {
         </div>
       </SceneShell>
 
-      <SceneShell opacity={sceneOpacity(frame, 340, 500)} progress={sceneProgress(frame, 340, 500)} className="scene-result">
+      <SceneShell
+        opacity={sceneOpacity(frame, scene3.startFrame, scene3.endFrame)}
+        progress={sceneProgress(frame, scene3.startFrame, scene3.endFrame)}
+        className="scene-result"
+      >
         <div className="center-stack">
           <div className="eyebrow">would be worth</div>
           <div
             className="result-money"
             style={{ transform: `scale(${0.85 + resultScale * 0.15})` }}
           >
-            {frame < 445 ? countedValue : value}
+            {frame < scene3.startFrame + 105 ? countedValue : value}
           </div>
           <div className="gain-pill">about {growth.toFixed(1)}x your money</div>
           <div className="eyebrow">today</div>
@@ -260,7 +305,11 @@ export function CouldaMadeFinanceVideo(input: VideoInput) {
         <div className="burst-ring" />
       </SceneShell>
 
-      <SceneShell opacity={sceneOpacity(frame, 490, 610)} progress={sceneProgress(frame, 490, 610)} className="scene-lesson">
+      <SceneShell
+        opacity={sceneOpacity(frame, scene4.startFrame, scene4.endFrame)}
+        progress={sceneProgress(frame, scene4.startFrame, scene4.endFrame)}
+        className="scene-lesson"
+      >
         <div className="center-stack perspective">
           <div className="perspective-line">same asset.</div>
           <div className="perspective-line accent">just time.</div>
@@ -271,10 +320,16 @@ export function CouldaMadeFinanceVideo(input: VideoInput) {
         </div>
       </SceneShell>
 
-      <SceneShell opacity={sceneOpacity(frame, 600, 660)} progress={sceneProgress(frame, 600, 660)} className="scene-cta">
-        <div className="center-stack cta">
+      <SceneShell
+        opacity={sceneOpacity(frame, scene5.startFrame, scene5.endFrame)}
+        progress={sceneProgress(frame, scene5.startFrame, scene5.endFrame)}
+        className="scene-cta"
+      >
+        <div className="end-card">
+          <div className="end-logo">{brandInitials}</div>
           <div className="brand">couldamade.com</div>
           <div className="cta-text">run yours now</div>
+          <div className="end-meta">{input.ticker.toUpperCase()} / {value} / {growth.toFixed(1)}x</div>
         </div>
       </SceneShell>
 
