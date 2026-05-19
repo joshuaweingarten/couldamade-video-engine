@@ -9,6 +9,7 @@ Remotion and ffmpeg render pipeline.
 - Turns one scenario into multiple video ideas, hooks, scripts, and captions.
 - Queues one video or a batch of videos.
 - Renders 9:16 H.264 MP4 files with consistent fonts and layout.
+- Adds narration audio during render when `OPENAI_API_KEY` is set.
 - Writes `.srt` captions and `.json` metadata next to every finished video.
 - Keeps a local render history that survives app restarts on Replit.
 - Exposes API endpoints so another CouldaMade app can create videos later.
@@ -34,26 +35,20 @@ If Replit does not auto-install dependencies, open the Shell and run:
 
 ```bash
 npm install
-npm run dev
+npm run replit
 ```
 
 For deployment, use:
 
 ```bash
-npm run build
-npm start
+npm run replit
 ```
 
-## Fonts
+## Narration
 
-Add these files under `public/fonts/`:
-
-- `BebasNeue-Regular.woff2`
-- `JetBrainsMono-Regular.woff2`
-- `JetBrainsMono-Bold.woff2`
-
-The template references local font files so the preview and final export do not
-drift apart during server rendering.
+Add `OPENAI_API_KEY` in Replit Secrets to generate narration audio during video
+rendering. Without that key, the app still renders the MP4 and caption files,
+but the video will be silent.
 
 ## Dashboard Workflow
 
@@ -147,7 +142,6 @@ This version is intentionally useful without paid services. The next upgrades
 can be added behind environment variables:
 
 - A market-data provider to calculate current values automatically.
-- A voice provider to generate narration audio.
 - Durable storage such as Cloudflare R2 or S3 if Replit file persistence becomes
   limiting.
 - A scheduler that queues 25 videos per week.
