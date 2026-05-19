@@ -132,14 +132,64 @@ async function attachNarrationAudio(input: VideoInput, jobId: string): Promise<V
     return input;
   }
 
-  const audioName = `${jobId}-voiceover.wav`;
+  const useReplitAi = Boolean(process.env.AI_INTEGRATIONS_OPENAI_BASE_URL && process.env.AI_INTEGRATIONS_OPENAI_API_KEY);
+  const audioName = `${jobId}-voiceover.${useReplitAi ? "mp3" : "wav"}`;
   const audioPath = path.resolve("renders", audioName);
-  await generateLocalNarration(input.voiceover, audioPath);
+  if (useReplitAi) {
+    await generateReplitAiNarration(input.voiceover, audioPath);
+  } else {
+    await generateLocalNarration(input.voiceover, audioPath);
+  }
   const port = Number(process.env.PORT ?? 5000);
   return {
     ...input,
     voiceoverAudioUrl: `http://127.0.0.1:${port}/renders/${audioName}`
   };
+}
+
+async function generateReplitAiNarration(text: string, outputPath: string): Promise<void> {
+  const baseUrl = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
+  const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+  if (!baseUrl || !apiKey) {
+    throw new Error("Replit AI voice integration is not configured.");
+  }
+
+  const response = await fetch(`${baseUrl.replace(/\/$/, "")}/chat/completions`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: "gpt-audio",
+      modalities: ["text", "audio"],
+      audio: {
+        voice: process.env.REPLIT_AI_TTS_VOICE ?? "onyx",
+        format: "mp3"
+      },
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a voiceover narrator. Read the script the user provides word for word, exactly as written. " +
+            "Use a calm, confident, analytical tone with clear pronunciation and a measured short-form video pace. " +
+            "Do not add any words, commentary, or filler not present in the script."
+        },
+        { role: "user", content: text.slice(0, 4096) }
+      ]
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Replit AI TTS failed: ${await response.text()}`);
+  }
+
+  const data = await response.json() as { choices?: Array<{ message?: { audio?: { data?: string } } }> };
+  const audioBase64 = data.choices?.[0]?.message?.audio?.data;
+  if (!audioBase64) {
+    throw new Error("Replit AI TTS returned no audio data.");
+  }
+  await writeFile(outputPath, Buffer.from(audioBase64, "base64"));
 }
 
 async function generateLocalNarration(text: string, outputPath: string): Promise<void> {
