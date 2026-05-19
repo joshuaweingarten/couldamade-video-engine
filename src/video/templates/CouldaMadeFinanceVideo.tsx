@@ -63,6 +63,8 @@ export function CouldaMadeFinanceVideo(input: VideoInput) {
   const amount = formatDollar(input.amount);
   const value = formatDollar(input.value);
   const growth = input.value / input.amount;
+  const activeScene = input.scenes?.find((scene) => frame >= scene.startFrame && frame <= scene.endFrame);
+  const captionOpacity = activeScene ? sceneOpacity(frame, activeScene.startFrame, activeScene.endFrame) : 0;
 
   const pulse = spring({ frame, fps, config: { damping: 18, stiffness: 80 } });
   const resultScale = spring({
@@ -91,9 +93,7 @@ export function CouldaMadeFinanceVideo(input: VideoInput) {
             transform: `scale(${0.96 + pulse * 0.04})`
           }}
         >
-          {input.hook.split(" ").map((word, index) => (
-            <span key={`${word}-${index}`}>{word}</span>
-          ))}
+          <span>{input.hook}</span>
         </div>
       </SceneShell>
 
@@ -101,9 +101,11 @@ export function CouldaMadeFinanceVideo(input: VideoInput) {
         <div className="center-stack">
           <div className="eyebrow">if you put</div>
           <div className="big-money">{amount}</div>
-          <div className="eyebrow">into</div>
-          <div className="company">{input.company}</div>
-          <div className="eyebrow">in {startLabel}</div>
+          <div className="company-lockup">
+            <div className="eyebrow">into</div>
+            <div className="company">{input.company}</div>
+            <div className="eyebrow">in {startLabel}</div>
+          </div>
         </div>
       </SceneShell>
 
@@ -123,7 +125,7 @@ export function CouldaMadeFinanceVideo(input: VideoInput) {
           >
             {value}
           </div>
-          <div className="gain">about {growth.toFixed(1)}x your money</div>
+          <div className="gain-pill">about {growth.toFixed(1)}x your money</div>
           <div className="eyebrow">today</div>
         </div>
       </SceneShell>
@@ -142,6 +144,11 @@ export function CouldaMadeFinanceVideo(input: VideoInput) {
         </div>
       </SceneShell>
 
+      {activeScene && (
+        <div className="spoken-caption" style={{ opacity: captionOpacity }}>
+          {activeScene.text}
+        </div>
+      )}
       <div className="disclaimer">{input.disclaimer}</div>
     </AbsoluteFill>
   );
