@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { CalendarPlus, Download, FileText, Layers, Play, RefreshCw, Send, Sparkles } from "lucide-react";
+import { CalendarPlus, Download, FileText, Layers, Play, RefreshCw, Search, Send, Shuffle, Sparkles } from "lucide-react";
 import type { ContentItem, CreativeAngle, RenderJob, ScenarioInput, ScheduleEntry, VideoInput } from "../shared/types";
 import "./styles.css";
 
@@ -25,6 +25,21 @@ const angleOptions: Array<{ value: CreativeAngle; label: string }> = [
   { value: "comeback", label: "Comeback" }
 ];
 
+type ExternalScenario = {
+  asset: string;
+  ticker?: string;
+  category?: string;
+  startDate?: string;
+  amountInvested: number;
+  finalValue: number;
+};
+
+type CouldaMadeAsset = {
+  asset: string;
+  assetType: string;
+  name?: string;
+};
+
 function App() {
   const [scenario, setScenario] = useState<ScenarioInput>(defaultScenario);
   const [ideas, setIdeas] = useState<VideoInput[]>([]);
@@ -32,6 +47,8 @@ function App() {
   const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
   const [jobs, setJobs] = useState<RenderJob[]>([]);
   const [busy, setBusy] = useState(false);
+  const [lookupMessage, setLookupMessage] = useState("");
+  const [assetResults, setAssetResults] = useState<CouldaMadeAsset[]>([]);
   const activeJob = useMemo(() => jobs.find((job) => job.status === "queued" || job.status === "rendering"), [jobs]);
   const completedCount = jobs.filter((job) => job.status === "done").length;
 
@@ -143,6 +160,80 @@ function App() {
     }
   }
 
+  async function calculateFromCouldaMade() {
+    setBusy(true);
+    setLookupMessage("Calculating with CouldaMade.com...");
+    try {
+      const date = `${scenario.year}-${String(scenario.month).padStart(2, "0")}-${String(scenario.day).padStart(2, "0")}`;
+      const qs = new URLSearchParams({
+        asset: scenario.ticker,
+        assetType: scenario.assetType,
+        amount: String(scenario.amount),
+        date
+      });
+      const res = await fetch(`/api/external/calculate?${qs}`, { headers: { Accept: "application/json" } });
+      if (!res.ok) throw new Error(await res.text());
+      applyExternalScenario((await res.json()) as ExternalScenario);
+      setLookupMessage("Pulled live calculation from CouldaMade.com.");
+    } catch (error) {
+      setLookupMessage(error instanceof Error ? error.message : "CouldaMade lookup failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function randomFromCouldaMade() {
+    setBusy(true);
+    setLookupMessage("Finding a random CouldaMade scenario...");
+    try {
+      const res = await fetch("/api/external/random", { headers: { Accept: "application/json" } });
+      if (!res.ok) throw new Error(await res.text());
+      applyExternalScenario((await res.json()) as ExternalScenario);
+      setLookupMessage("Loaded a random scenario from CouldaMade.com.");
+    } catch (error) {
+      setLookupMessage(error instanceof Error ? error.message : "CouldaMade random lookup failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function searchCouldaMadeAssets() {
+    if (!scenario.ticker.trim()) return;
+    const res = await fetch(`/api/external/search?q=${encodeURIComponent(scenario.ticker)}`);
+    if (!res.ok) return;
+    setAssetResults((await res.json()) as CouldaMadeAsset[]);
+  }
+
+  function useAsset(asset: CouldaMadeAsset) {
+    setScenario((prev) => ({
+      ...prev,
+      ticker: asset.asset,
+      company: cleanCompanyName(asset.name ?? asset.asset),
+      assetType: asset.assetType
+    }));
+    setAssetResults([]);
+  }
+
+  function applyExternalScenario(external: ExternalScenario) {
+    const date = external.startDate ? new Date(external.startDate) : new Date(Date.UTC(scenario.year, scenario.month - 1, scenario.day));
+    const safeDate = Number.isNaN(date.getTime()) ? new Date(Date.UTC(scenario.year, scenario.month - 1, scenario.day)) : date;
+    const assetType = external.category ?? scenario.assetType;
+    const ticker = external.ticker ?? external.asset;
+    const nextScenario: ScenarioInput = {
+      ...scenario,
+      ticker: assetType === "stock" ? ticker.toUpperCase() : ticker,
+      company: cleanCompanyName(external.asset),
+      assetType,
+      amount: Math.round(external.amountInvested),
+      value: Math.round(external.finalValue),
+      year: safeDate.getUTCFullYear(),
+      month: safeDate.getUTCMonth() + 1,
+      day: safeDate.getUTCDate()
+    };
+    setScenario(nextScenario);
+    void generateIdeas(nextScenario);
+  }
+
   async function scheduleContent(item: ContentItem) {
     const scheduledFor = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
     await fetch("/api/schedule/entries", {
@@ -188,7 +279,12 @@ function App() {
           >
             <label>
               Ticker
-              <input value={scenario.ticker} onChange={(e) => update("ticker", e.target.value)} />
+              <div className="input-action">
+                <input value={scenario.ticker} onChange={(e) => update("ticker", e.target.value.toUpperCase())} />
+                <button className="icon-button compact" type="button" onClick={searchCouldaMadeAssets} aria-label="Search CouldaMade assets">
+                  <Search size={17} />
+                </button>
+              </div>
             </label>
             <label>
               Company
@@ -218,6 +314,29 @@ function App() {
               Asset type
               <input value={scenario.assetType} onChange={(e) => update("assetType", e.target.value)} />
             </label>
+
+            {assetResults.length > 0 && (
+              <div className="wide asset-results">
+                {assetResults.slice(0, 5).map((asset) => (
+                  <button key={`${asset.asset}-${asset.assetType}`} type="button" onClick={() => useAsset(asset)}>
+                    <strong>{asset.asset}</strong>
+                    <span>{asset.name ?? asset.assetType}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="wide lookup-actions">
+              <button className="secondary-button" disabled={busy} type="button" onClick={calculateFromCouldaMade}>
+                <RefreshCw size={18} />
+                Calculate from CouldaMade
+              </button>
+              <button className="secondary-button" disabled={busy} type="button" onClick={randomFromCouldaMade}>
+                <Shuffle size={18} />
+                Random scenario
+              </button>
+            </div>
+            {lookupMessage && <p className="wide lookup-message">{lookupMessage}</p>}
 
             <div className="wide">
               <p className="field-label">Angles</p>
@@ -385,3 +504,9 @@ function JobCard({ job }: { job: RenderJob }) {
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
+
+function cleanCompanyName(raw: string): string {
+  return raw
+    .replace(/,?\s+(Inc\.?|Corp\.?|Corporation|Ltd\.?|Limited|LLC|L\.L\.C\.|PLC|S\.A\.|N\.V\.|Holdings?|Group|Co\.?)$/i, "")
+    .trim();
+}
