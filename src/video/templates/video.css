@@ -1,30 +1,9 @@
-@font-face {
-  font-family: "Bebas Neue";
-  src: url("/fonts/BebasNeue-Regular.woff2") format("woff2");
-  font-weight: 400 900;
-  font-display: block;
-}
-
-@font-face {
-  font-family: "JetBrains Mono";
-  src: url("/fonts/JetBrainsMono-Regular.woff2") format("woff2");
-  font-weight: 400;
-  font-display: block;
-}
-
-@font-face {
-  font-family: "JetBrains Mono";
-  src: url("/fonts/JetBrainsMono-Bold.woff2") format("woff2");
-  font-weight: 700 900;
-  font-display: block;
-}
-
 .video-frame {
   --accent: #28f296;
   background: #050706;
   color: white;
   overflow: hidden;
-  font-family: "Bebas Neue", Impact, sans-serif;
+  font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
 }
 
 .grid-bg {
@@ -63,7 +42,7 @@
   position: absolute;
   top: 116px;
   left: 76px;
-  font-family: "JetBrains Mono", monospace;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   text-transform: uppercase;
   letter-spacing: 0.16em;
 }
@@ -116,7 +95,7 @@
 }
 
 .eyebrow {
-  font-family: "JetBrains Mono", monospace;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   color: rgba(255, 255, 255, 0.58);
   font-size: 34px;
   font-weight: 800;
@@ -151,7 +130,7 @@
 }
 
 .gain {
-  font-family: "JetBrains Mono", monospace;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   color: var(--accent);
   font-size: 34px;
   font-weight: 800;
@@ -172,7 +151,7 @@
 }
 
 .brand {
-  font-family: "JetBrains Mono", monospace;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   color: var(--accent);
   font-size: 46px;
   font-weight: 800;
@@ -189,7 +168,7 @@
   right: 56px;
   bottom: 42px;
   left: 56px;
-  font-family: "JetBrains Mono", monospace;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   color: rgba(255, 255, 255, 0.42);
   font-size: 20px;
   font-weight: 700;
