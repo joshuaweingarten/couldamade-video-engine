@@ -40,8 +40,13 @@
 
 .top-market {
   position: absolute;
-  top: 116px;
+  top: 92px;
+  right: 76px;
   left: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 26px;
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   text-transform: uppercase;
   letter-spacing: 0.16em;
@@ -53,32 +58,33 @@
 }
 
 .date {
-  margin-top: 10px;
   color: rgba(255, 255, 255, 0.48);
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 700;
+  text-align: right;
 }
 
 .hero-words {
   position: absolute;
-  inset: 0;
+  top: 355px;
+  right: 70px;
+  left: 70px;
   display: flex;
-  flex-wrap: wrap;
-  align-content: center;
+  min-height: 760px;
+  align-items: center;
   justify-content: center;
-  gap: 18px 34px;
-  padding: 0 92px;
+  padding: 0 28px;
   text-align: center;
   text-transform: uppercase;
-  font-size: 138px;
-  line-height: 0.9;
+  font-size: 118px;
+  line-height: 0.88;
   letter-spacing: 0;
   text-shadow: 0 12px 34px rgba(0, 0, 0, 0.55);
 }
 
 .hero-words span {
-  display: inline-block;
-  white-space: nowrap;
+  display: block;
+  max-width: 940px;
 }
 
 .center-stack {
@@ -88,8 +94,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 34px;
-  padding: 0 90px;
+  gap: 30px;
+  padding: 0 86px 120px;
   text-align: center;
   text-transform: uppercase;
 }
@@ -105,16 +111,22 @@
 .big-money,
 .pause-amount {
   color: var(--accent);
-  font-size: 210px;
+  font-size: 190px;
   line-height: 0.85;
   text-shadow: 0 0 36px rgba(40, 242, 150, 0.34);
+}
+
+.company-lockup {
+  display: grid;
+  gap: 18px;
+  max-width: 940px;
 }
 
 .company {
   max-width: 920px;
   color: white;
-  font-size: 150px;
-  line-height: 0.9;
+  font-size: 118px;
+  line-height: 0.92;
   overflow-wrap: anywhere;
 }
 
@@ -124,14 +136,18 @@
 
 .result-money {
   color: var(--accent);
-  font-size: 230px;
+  font-size: 202px;
   line-height: 0.85;
   text-shadow: 0 0 48px rgba(40, 242, 150, 0.45);
 }
 
-.gain {
+.gain-pill {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  border: 2px solid rgba(40, 242, 150, 0.36);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.34);
   color: var(--accent);
+  padding: 18px 24px;
   font-size: 34px;
   font-weight: 800;
   letter-spacing: 0.14em;
@@ -142,7 +158,7 @@
 }
 
 .perspective-line {
-  font-size: 166px;
+  font-size: 148px;
   line-height: 0.92;
 }
 
@@ -159,14 +175,33 @@
 }
 
 .cta-text {
-  font-size: 132px;
+  font-size: 118px;
   line-height: 0.9;
+}
+
+.spoken-caption {
+  position: absolute;
+  right: 70px;
+  bottom: 108px;
+  left: 70px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.64);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.38);
+  color: #fff;
+  padding: 24px 30px;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 34px;
+  font-weight: 900;
+  line-height: 1.16;
+  text-align: center;
+  text-transform: uppercase;
 }
 
 .disclaimer {
   position: absolute;
   right: 56px;
-  bottom: 42px;
+  bottom: 34px;
   left: 56px;
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   color: rgba(255, 255, 255, 0.42);
