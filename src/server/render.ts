@@ -133,10 +133,14 @@ async function attachNarrationAudio(input: VideoInput, jobId: string): Promise<V
   }
 
   const useReplitAi = Boolean(process.env.AI_INTEGRATIONS_OPENAI_BASE_URL && process.env.AI_INTEGRATIONS_OPENAI_API_KEY);
-  const audioName = `${jobId}-voiceover.${useReplitAi ? "mp3" : "wav"}`;
+  const externalTtsBaseUrl = getExternalTtsBaseUrl();
+  const useExternalTts = !useReplitAi && Boolean(externalTtsBaseUrl);
+  const audioName = `${jobId}-voiceover.${useReplitAi || useExternalTts ? "mp3" : "wav"}`;
   const audioPath = path.resolve("renders", audioName);
   if (useReplitAi) {
     await generateReplitAiNarration(input.voiceover, audioPath);
+  } else if (externalTtsBaseUrl) {
+    await generateExternalNarration(input.voiceover, audioPath, externalTtsBaseUrl);
   } else {
     await generateLocalNarration(input.voiceover, audioPath);
   }
@@ -145,6 +149,33 @@ async function attachNarrationAudio(input: VideoInput, jobId: string): Promise<V
     ...input,
     voiceoverAudioUrl: `http://127.0.0.1:${port}/renders/${audioName}`
   };
+}
+
+function getExternalTtsBaseUrl(): string | undefined {
+  const configured = process.env.EXTERNAL_TTS_BASE_URL?.trim();
+  if (configured) return configured;
+
+  return "https://52ede6e5-94ef-483b-aaaf-f060ba7ecc34-00-i9ffldeixdtc.picard.replit.dev";
+}
+
+async function generateExternalNarration(text: string, outputPath: string, baseUrl: string): Promise<void> {
+  const response = await fetch(`${baseUrl.replace(/\/$/, "")}/api/content/tts`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ text: text.slice(0, 4096) })
+  });
+
+  if (!response.ok) {
+    throw new Error(`External TTS failed: ${await response.text()}`);
+  }
+
+  const audio = Buffer.from(await response.arrayBuffer());
+  if (audio.length === 0) {
+    throw new Error("External TTS returned an empty audio file.");
+  }
+  await writeFile(outputPath, audio);
 }
 
 async function generateReplitAiNarration(text: string, outputPath: string): Promise<void> {
