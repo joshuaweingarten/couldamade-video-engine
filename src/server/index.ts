@@ -182,8 +182,8 @@ app.put("/api/content/items/:id", async (req, res) => {
   res.json(item);
 });
 
-app.delete("/api/content/items/:id", async (req, res) => {
-  const deleted = await deleteContentItem(Number(req.params.id));
+app.delete("/api/content/items/:id", async (_req, res) => {
+  const deleted = await deleteContentItem(Number(_req.params.id));
   res.status(deleted ? 204 : 404).send(deleted ? undefined : { error: "Content item not found" });
 });
 
@@ -297,9 +297,15 @@ app.post("/api/content/tts", async (req, res) => {
     return;
   }
 
-  const externalTtsBaseUrl =
-    process.env.EXTERNAL_TTS_BASE_URL?.trim() ||
-    "https://52ede6e5-94ef-483b-aaaf-f060ba7ecc34-00-i9ffldeixdtc.picard.replit.dev";
+  const externalTtsBaseUrl = process.env.EXTERNAL_TTS_BASE_URL?.trim();
+  if (!externalTtsBaseUrl) {
+    res.status(503).json({
+      error: "Voice generation is not configured",
+      details: "Set EXTERNAL_TTS_BASE_URL to a running voice service or enable the Replit AI voice integration."
+    });
+    return;
+  }
+
   const speech = await fetch(`${externalTtsBaseUrl.replace(/\/$/, "")}/api/content/tts`, {
     method: "POST",
     headers: {
@@ -308,8 +314,9 @@ app.post("/api/content/tts", async (req, res) => {
     body: JSON.stringify({ text })
   });
 
-  if (!speech.ok) {
-    res.status(502).json({ error: "External voice generation failed", details: await speech.text() });
+  const contentType = speech.headers.get("content-type") ?? "";
+  if (!speech.ok || !contentType.includes("audio")) {
+    res.status(502).json({ error: "External voice generation failed", details: summarizeTtsError(await speech.text()) });
     return;
   }
 
@@ -318,6 +325,16 @@ app.post("/api/content/tts", async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   res.send(audio);
 });
+
+function summarizeTtsError(body: string): string {
+  const plain = body
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return plain.slice(0, 300) || "No error body returned.";
+}
 
 const dashboardDir = path.resolve("dist/dashboard");
 app.use(express.static(dashboardDir));
