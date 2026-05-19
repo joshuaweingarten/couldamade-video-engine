@@ -1,90 +1,202 @@
 .video-frame {
   --accent: #28f296;
-  background: #050706;
-  color: white;
+  --hot: #ffe86b;
+  --ink: #f7fff9;
+  background: #030504;
+  color: var(--ink);
   overflow: hidden;
   font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
 }
 
+.motion-world {
+  transform-origin: center;
+  will-change: transform;
+}
+
 .grid-bg {
   position: absolute;
-  inset: 0;
+  inset: -140px;
   opacity: 0.22;
   background-image:
-    linear-gradient(rgba(0, 255, 136, 0.18) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 255, 136, 0.18) 1px, transparent 1px);
-  background-size: 94px 94px;
+    linear-gradient(rgba(40, 242, 150, 0.18) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(40, 242, 150, 0.18) 1px, transparent 1px);
+  background-size: 86px 86px;
+}
+
+.market-tape {
+  position: absolute;
+  inset: 0;
+  opacity: 0.18;
+  transform: rotate(-11deg) scale(1.12);
+}
+
+.tape-row {
+  position: absolute;
+  left: -620px;
+  width: 2400px;
+  display: flex;
+  gap: 30px;
+  white-space: nowrap;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 34px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tape-row:nth-child(1) {
+  top: 340px;
+}
+
+.tape-row:nth-child(2) {
+  top: 900px;
+}
+
+.tape-row:nth-child(3) {
+  top: 1450px;
+}
+
+.floating-numbers span {
+  position: absolute;
+  color: rgba(255, 255, 255, 0.72);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 36px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  will-change: left, top, transform;
 }
 
 .chart-line {
   position: absolute;
-  inset: 0;
-  filter: drop-shadow(0 0 22px rgba(0, 255, 136, 0.45));
+  inset: -40px;
+  filter: drop-shadow(0 0 22px rgba(40, 242, 150, 0.48));
 }
 
 .chart-line path {
   fill: none;
   stroke: var(--accent);
-  stroke-width: 34;
+  stroke-width: 32;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.price-wash {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(40, 242, 150, 0.18), transparent 29%),
+    linear-gradient(130deg, rgba(40, 242, 150, 0.08), transparent 30%, rgba(255, 232, 107, 0.06) 58%, transparent 75%);
+  mix-blend-mode: screen;
 }
 
 .vignette {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 50% 35%, rgba(0, 255, 136, 0.12), transparent 32%),
-    radial-gradient(circle at 50% 50%, transparent 28%, rgba(0, 0, 0, 0.78) 100%);
+    radial-gradient(circle at 50% 42%, transparent 22%, rgba(0, 0, 0, 0.24) 56%, rgba(0, 0, 0, 0.88) 100%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.72), transparent 22%, transparent 68%, rgba(0, 0, 0, 0.78));
+}
+
+.scanline {
+  position: absolute;
+  inset: 0;
+  opacity: 0.11;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.18) 1px, transparent 1px);
+  background-size: 100% 11px;
+  pointer-events: none;
 }
 
 .top-market {
   position: absolute;
-  top: 92px;
-  right: 76px;
-  left: 76px;
+  top: 86px;
+  right: 66px;
+  left: 66px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 26px;
+  gap: 24px;
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   text-transform: uppercase;
-  letter-spacing: 0.16em;
 }
 
 .ticker {
-  font-size: 56px;
-  font-weight: 800;
+  color: var(--accent);
+  font-size: 58px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 24px rgba(40, 242, 150, 0.36);
 }
 
 .date {
-  color: rgba(255, 255, 255, 0.48);
+  max-width: 420px;
+  color: rgba(255, 255, 255, 0.58);
   font-size: 22px;
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: 0.12em;
   text-align: right;
 }
 
 .hero-words {
   position: absolute;
-  top: 355px;
-  right: 70px;
-  left: 70px;
+  top: 300px;
+  right: 48px;
+  left: 48px;
   display: flex;
-  min-height: 760px;
+  min-height: 780px;
   align-items: center;
   justify-content: center;
-  padding: 0 28px;
+  padding: 0 26px;
   text-align: center;
   text-transform: uppercase;
-  font-size: 118px;
-  line-height: 0.88;
+  font-size: 126px;
+  line-height: 0.86;
   letter-spacing: 0;
-  text-shadow: 0 12px 34px rgba(0, 0, 0, 0.55);
+  text-shadow:
+    0 10px 0 rgba(0, 0, 0, 0.45),
+    0 30px 54px rgba(0, 0, 0, 0.62);
 }
 
 .hero-words span {
   display: block;
-  max-width: 940px;
+  max-width: 960px;
+}
+
+.side-card,
+.receipt-panel,
+.split-comparison {
+  position: absolute;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(4, 14, 10, 0.72);
+  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(10px);
+}
+
+.side-card {
+  right: 72px;
+  bottom: 286px;
+  display: grid;
+  gap: 4px;
+  padding: 18px 22px;
+  transform: rotate(2deg);
+  text-transform: uppercase;
+}
+
+.side-card span,
+.receipt-panel span,
+.split-comparison span {
+  color: rgba(255, 255, 255, 0.56);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 21px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.side-card strong {
+  color: var(--hot);
+  font-size: 68px;
+  line-height: 0.9;
 }
 
 .center-stack {
@@ -94,63 +206,145 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 30px;
-  padding: 0 86px 120px;
+  gap: 28px;
+  padding: 0 78px 130px;
   text-align: center;
   text-transform: uppercase;
 }
 
 .eyebrow {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-  color: rgba(255, 255, 255, 0.58);
-  font-size: 34px;
-  font-weight: 800;
-  letter-spacing: 0.18em;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
 }
 
 .big-money,
 .pause-amount {
   color: var(--accent);
-  font-size: 190px;
-  line-height: 0.85;
-  text-shadow: 0 0 36px rgba(40, 242, 150, 0.34);
+  font-size: 202px;
+  line-height: 0.82;
+  text-shadow:
+    0 0 34px rgba(40, 242, 150, 0.42),
+    0 16px 0 rgba(0, 0, 0, 0.38);
 }
 
 .company-lockup {
   display: grid;
-  gap: 18px;
+  gap: 16px;
   max-width: 940px;
 }
 
 .company {
   max-width: 920px;
   color: white;
-  font-size: 118px;
-  line-height: 0.92;
+  font-size: 122px;
+  line-height: 0.9;
   overflow-wrap: anywhere;
+  text-shadow: 0 18px 42px rgba(0, 0, 0, 0.58);
+}
+
+.receipt-panel {
+  right: 64px;
+  bottom: 272px;
+  left: 64px;
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1fr;
+  gap: 12px;
+  padding: 22px;
+}
+
+.receipt-panel div {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.receipt-panel strong {
+  color: var(--ink);
+  overflow: hidden;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 31px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .pause {
-  gap: 54px;
+  gap: 46px;
+}
+
+.hold-timeline {
+  position: absolute;
+  right: 96px;
+  bottom: 310px;
+  left: 96px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+
+.hold-timeline div {
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  opacity: 0.38;
+  transition: opacity 120ms linear;
+}
+
+.hold-timeline div.active {
+  opacity: 1;
+}
+
+.hold-timeline i {
+  width: 26px;
+  height: 26px;
+  border: 3px solid var(--accent);
+  border-radius: 999px;
+  background: #07120c;
+  box-shadow: 0 0 24px rgba(40, 242, 150, 0.42);
+}
+
+.hold-timeline span {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .result-money {
   color: var(--accent);
-  font-size: 202px;
-  line-height: 0.85;
-  text-shadow: 0 0 48px rgba(40, 242, 150, 0.45);
+  font-size: 206px;
+  line-height: 0.82;
+  text-shadow:
+    0 0 48px rgba(40, 242, 150, 0.52),
+    0 18px 0 rgba(0, 0, 0, 0.42);
 }
 
 .gain-pill {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-  border: 2px solid rgba(40, 242, 150, 0.36);
+  border: 2px solid rgba(255, 232, 107, 0.42);
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.34);
-  color: var(--accent);
+  background: rgba(255, 232, 107, 0.12);
+  color: var(--hot);
   padding: 18px 24px;
   font-size: 34px;
-  font-weight: 800;
-  letter-spacing: 0.14em;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.burst-ring {
+  position: absolute;
+  top: 410px;
+  left: 126px;
+  width: 820px;
+  height: 820px;
+  border: 10px solid rgba(40, 242, 150, 0.2);
+  border-radius: 999px;
+  box-shadow: inset 0 0 70px rgba(40, 242, 150, 0.12), 0 0 60px rgba(40, 242, 150, 0.18);
 }
 
 .perspective {
@@ -158,44 +352,73 @@
 }
 
 .perspective-line {
-  font-size: 148px;
-  line-height: 0.92;
+  font-size: 150px;
+  line-height: 0.9;
+  text-shadow: 0 18px 44px rgba(0, 0, 0, 0.6);
 }
 
 .accent {
   color: var(--accent);
 }
 
+.split-comparison {
+  right: 70px;
+  bottom: 286px;
+  left: 70px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 18px;
+}
+
+.split-comparison div {
+  display: grid;
+  gap: 6px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.split-comparison strong {
+  color: var(--accent);
+  font-size: 58px;
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+
 .brand {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   color: var(--accent);
   font-size: 46px;
-  font-weight: 800;
-  letter-spacing: 0.14em;
+  font-weight: 900;
+  letter-spacing: 0.12em;
 }
 
 .cta-text {
-  font-size: 118px;
+  font-size: 120px;
   line-height: 0.9;
+  text-shadow: 0 18px 42px rgba(0, 0, 0, 0.62);
 }
 
 .spoken-caption {
   position: absolute;
-  right: 70px;
-  bottom: 108px;
-  left: 70px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  right: 60px;
+  bottom: 104px;
+  left: 60px;
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.64);
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.38);
+  background: rgba(0, 0, 0, 0.72);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.44);
   color: #fff;
-  padding: 24px 30px;
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-  font-size: 34px;
+  padding: 22px 28px;
+  font-size: 40px;
   font-weight: 900;
-  line-height: 1.16;
+  line-height: 1.04;
   text-align: center;
   text-transform: uppercase;
+  text-shadow: 0 5px 0 rgba(0, 0, 0, 0.55);
+}
+
+.spoken-caption strong {
+  color: var(--hot);
 }
 
 .disclaimer {
