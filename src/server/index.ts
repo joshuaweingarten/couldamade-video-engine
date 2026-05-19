@@ -29,6 +29,7 @@ import {
   updateContentItem,
   updateScheduleEntry
 } from "./appStore";
+import { externalScenarioToScenario, registerCouldaMadeRoutes } from "./couldamade";
 
 const PORT = Number(process.env.PORT ?? 8787);
 
@@ -80,6 +81,13 @@ app.post("/api/ideas", (req, res) => {
   }
 
   res.json({ videos: buildVideoIdeas(parsed.data) });
+});
+
+registerCouldaMadeRoutes(app);
+
+app.post("/api/ideas/from-external", (req, res) => {
+  const scenario = externalScenarioToScenario(req.body);
+  res.json({ videos: buildVideoIdeas(scenario), scenario });
 });
 
 app.post("/api/content/generate-finance", async (req, res) => {
