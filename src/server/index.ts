@@ -31,7 +31,7 @@ import {
 } from "./appStore";
 import { externalScenarioToScenario, registerCouldaMadeRoutes } from "./couldamade";
 
-const PORT = Number(process.env.PORT ?? 3000);
+const PORT = Number(process.env.PORT ?? 5000);
 
 await loadJobs();
 await loadAppData();
@@ -252,38 +252,14 @@ app.post("/api/content/tts", async (req, res) => {
     res.status(400).json({ error: "Missing text" });
     return;
   }
-  if (!process.env.OPENAI_API_KEY) {
-    res.status(501).json({ error: "Set OPENAI_API_KEY in Replit Secrets to enable AI voiceover." });
-    return;
-  }
-
-  const speech = await fetch("https://api.openai.com/v1/audio/speech", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: process.env.TTS_MODEL ?? "gpt-4o-mini-tts",
-      voice: process.env.TTS_VOICE ?? "coral",
-      input: text,
-      instructions: "Speak like a clear, energetic short-form finance narrator.",
-      response_format: "mp3"
-    })
-  });
-
-  if (!speech.ok) {
-    res.status(502).json({ error: "Voice generation failed", details: await speech.text() });
-    return;
-  }
-
-  const audio = Buffer.from(await speech.arrayBuffer());
-  res.setHeader("Content-Type", "audio/mpeg");
-  res.setHeader("Cache-Control", "no-store");
-  res.send(audio);
+  res.status(501).json({ error: "Use the render queue for local narration audio." });
 });
 
-app.use(express.static(path.resolve("dist/dashboard")));
+const dashboardDir = path.resolve("dist/dashboard");
+app.use(express.static(dashboardDir));
+app.get("*", (_req, res) => {
+  res.sendFile(path.join(dashboardDir, "index.html"));
+});
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`CouldaMade video engine API listening on http://0.0.0.0:${PORT}`);
