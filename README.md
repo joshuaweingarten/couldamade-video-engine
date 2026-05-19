@@ -9,7 +9,7 @@ Remotion and ffmpeg render pipeline.
 - Turns one scenario into multiple video ideas, hooks, scripts, and captions.
 - Queues one video or a batch of videos.
 - Renders 9:16 H.264 MP4 files with consistent fonts and layout.
-- Adds narration audio during render when `OPENAI_API_KEY` is set.
+- Adds local narration audio during render inside Replit.
 - Writes `.srt` captions and `.json` metadata next to every finished video.
 - Keeps a local render history that survives app restarts on Replit.
 - Exposes API endpoints so another CouldaMade app can create videos later.
@@ -28,8 +28,7 @@ of the generated videos.
 
 1. Import this repo into Replit from GitHub.
 2. Let Replit install dependencies.
-3. Make sure `ffmpeg` is available. This repo includes `replit.nix` with `ffmpeg`.
-4. Press Run.
+3. Press Run.
 
 If Replit does not auto-install dependencies, open the Shell and run:
 
@@ -46,9 +45,9 @@ npm run replit
 
 ## Narration
 
-Add `OPENAI_API_KEY` in Replit Secrets to generate narration audio during video
-rendering. Without that key, the app still renders the MP4 and caption files,
-but the video will be silent.
+Narration is generated locally in Replit with `espeak-ng`, which is installed by
+`replit.nix`. No OpenAI key or outside voice API is required. You can optionally
+tune it with `LOCAL_TTS_VOICE`, `LOCAL_TTS_SPEED`, and `LOCAL_TTS_PITCH`.
 
 ## Dashboard Workflow
 
