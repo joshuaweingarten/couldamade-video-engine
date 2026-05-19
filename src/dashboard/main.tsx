@@ -47,6 +47,7 @@ function App() {
   const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
   const [jobs, setJobs] = useState<RenderJob[]>([]);
   const [busy, setBusy] = useState(false);
+  const [actionError, setActionError] = useState("");
   const [lookupMessage, setLookupMessage] = useState("");
   const [assetResults, setAssetResults] = useState<CouldaMadeAsset[]>([]);
   const activeJob = useMemo(() => jobs.find((job) => job.status === "queued" || job.status === "rendering"), [jobs]);
@@ -92,6 +93,7 @@ function App() {
 
   async function queueOne(video: VideoInput) {
     setBusy(true);
+    setActionError("");
     try {
       const res = await fetch("/api/render", {
         method: "POST",
@@ -105,6 +107,8 @@ function App() {
         body: JSON.stringify(video)
       });
       await refreshJobs();
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Could not start render.");
     } finally {
       setBusy(false);
     }
@@ -112,6 +116,7 @@ function App() {
 
   async function queueBatch() {
     setBusy(true);
+    setActionError("");
     try {
       const res = await fetch("/api/render/batch", {
         method: "POST",
@@ -125,6 +130,8 @@ function App() {
         body: JSON.stringify(video)
       })));
       await refreshJobs();
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Could not start batch render.");
     } finally {
       setBusy(false);
     }
@@ -362,6 +369,7 @@ function App() {
               <FileText size={18} />
               Save ideas to content library
             </button>
+            {actionError && <p className="wide error">{actionError}</p>}
           </form>
         </section>
 
