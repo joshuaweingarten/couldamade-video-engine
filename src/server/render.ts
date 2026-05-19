@@ -135,6 +135,12 @@ async function attachNarrationAudio(input: VideoInput, jobId: string): Promise<V
   const useReplitAi = Boolean(process.env.AI_INTEGRATIONS_OPENAI_BASE_URL && process.env.AI_INTEGRATIONS_OPENAI_API_KEY);
   const externalTtsBaseUrl = getExternalTtsBaseUrl();
   const useExternalTts = !useReplitAi && Boolean(externalTtsBaseUrl);
+  const useLocalTts = !useReplitAi && !useExternalTts && process.env.ENABLE_LOCAL_TTS === "true";
+  if (!useReplitAi && !useExternalTts && !useLocalTts) {
+    console.warn(`Narration audio is not configured for render ${jobId}; continuing without audio.`);
+    return input;
+  }
+
   const audioName = `${jobId}-voiceover.${useReplitAi || useExternalTts ? "mp3" : "wav"}`;
   const audioPath = path.resolve("renders", audioName);
   try {
@@ -142,7 +148,7 @@ async function attachNarrationAudio(input: VideoInput, jobId: string): Promise<V
       await generateReplitAiNarration(input.voiceover, audioPath);
     } else if (externalTtsBaseUrl) {
       await generateExternalNarration(input.voiceover, audioPath, externalTtsBaseUrl);
-    } else {
+    } else if (useLocalTts) {
       await generateLocalNarration(input.voiceover, audioPath);
     }
   } catch (error) {
