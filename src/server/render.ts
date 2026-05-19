@@ -3,7 +3,7 @@ import { renderMedia, selectComposition } from "@remotion/renderer";
 import { execFileSync } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import type { RenderJob } from "../shared/types";
+import type { RenderJob, VideoInput } from "../shared/types";
 import { safeSlug } from "../shared/format";
 import { writeCaptionFile } from "./captions";
 
@@ -61,20 +61,21 @@ export async function renderJobToFile(
 ): Promise<{ outputPath: string; outputUrl: string; captionUrl: string; metadataUrl: string }> {
   await mkdir(path.resolve("renders"), { recursive: true });
 
+  const input = await withRenderStage("generate narration audio", () => attachNarrationAudio(job.input, job.id));
   const serveUrl = await withRenderStage("bundle Remotion video", () => getBundleUrl());
   const browserExecutable = getBrowserExecutable();
   const composition = await withRenderStage("load Remotion composition", () =>
     selectComposition({
       serveUrl,
       id: "CouldaMadeFinance",
-      inputProps: job.input,
+      inputProps: input,
       browserExecutable,
       chromiumOptions,
       timeoutInMilliseconds: 120_000
     })
   );
 
-  const filename = `${job.id}-${safeSlug(job.input.ticker)}-${safeSlug(job.input.company)}.mp4`;
+  const filename = `${job.id}-${safeSlug(input.ticker)}-${safeSlug(input.company)}.mp4`;
   const outputPath = path.resolve("renders", filename);
   const captionName = filename.replace(/\.mp4$/, ".srt");
   const metadataName = filename.replace(/\.mp4$/, ".json");
@@ -87,7 +88,7 @@ export async function renderJobToFile(
       serveUrl,
       codec: "h264",
       imageFormat: "jpeg",
-      inputProps: job.input,
+      inputProps: input,
       outputLocation: outputPath,
       browserExecutable,
       chromiumOptions,
@@ -97,15 +98,17 @@ export async function renderJobToFile(
     })
   );
 
-  await writeCaptionFile(job, captionPath);
+  const renderedJob = { ...job, input };
+  await writeCaptionFile(renderedJob, captionPath);
   await writeFile(
     metadataPath,
     JSON.stringify(
       {
         id: job.id,
-        input: job.input,
+        input,
         output: filename,
         captionFile: captionName,
+        audioFile: input.voiceoverAudioUrl,
         renderedAt: new Date().toISOString()
       },
       null,
@@ -119,6 +122,40 @@ export async function renderJobToFile(
     outputUrl: `/renders/${filename}`,
     captionUrl: `/renders/${captionName}`,
     metadataUrl: `/renders/${metadataName}`
+  };
+}
+
+async function attachNarrationAudio(input: VideoInput, jobId: string): Promise<VideoInput> {
+  if (input.voiceoverAudioUrl || !input.voiceover.trim() || !process.env.OPENAI_API_KEY) {
+    return input;
+  }
+
+  const audioName = `${jobId}-voiceover.mp3`;
+  const audioPath = path.resolve("renders", audioName);
+  const response = await fetch("https://api.openai.com/v1/audio/speech", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: process.env.TTS_MODEL ?? "gpt-4o-mini-tts",
+      voice: process.env.TTS_VOICE ?? "coral",
+      input: input.voiceover.slice(0, 4096),
+      instructions: "Speak like a clear, energetic short-form finance narrator. Keep it quick, confident, and conversational.",
+      response_format: "mp3"
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`OpenAI TTS failed: ${await response.text()}`);
+  }
+
+  await writeFile(audioPath, Buffer.from(await response.arrayBuffer()));
+  const port = Number(process.env.PORT ?? 3000);
+  return {
+    ...input,
+    voiceoverAudioUrl: `http://127.0.0.1:${port}/renders/${audioName}`
   };
 }
 
