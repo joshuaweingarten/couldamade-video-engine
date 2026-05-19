@@ -1,21 +1,49 @@
-import type { CreativeAngle, ScenarioInput, ScriptScene, VideoInput } from "./types";
+import type { CreativeAngle, QualityPreset, ScenarioInput, ScriptScene, VideoInput, VisualStyle } from "./types";
 import { formatDate, formatDollar } from "./format";
 
-const SCENE_TIMING: Array<[number, number]> = [
-  [0, 145],
-  [135, 270],
-  [260, 360],
-  [340, 500],
-  [490, 610],
-  [600, 660]
-];
+const TOTAL_FRAMES = 660;
 
 const ANGLE_HOOKS: Record<CreativeAngle, string> = {
-  regret: "This is what would've happened",
+  regret: "You missed this",
   receipt: "The receipt is painful",
-  shock: "Nobody expects this number",
+  shock: "$1K became how much?",
   lesson: "The boring move won",
   comeback: "Time did the heavy lifting"
+};
+
+const STYLE_BY_ANGLE: Record<CreativeAngle, VisualStyle> = {
+  regret: "regret",
+  receipt: "receipt",
+  shock: "terminal",
+  lesson: "clean",
+  comeback: "newsroom"
+};
+
+const PRESET_BY_ANGLE: Record<CreativeAngle, QualityPreset> = {
+  regret: "dramatic-regret",
+  receipt: "clean-finance",
+  shock: "punchy",
+  lesson: "clean-finance",
+  comeback: "punchy"
+};
+
+const ACCENT_BY_STYLE: Record<VisualStyle, string> = {
+  terminal: "#28f296",
+  receipt: "#f2d766",
+  regret: "#ff4d5d",
+  clean: "#2f6df6",
+  newsroom: "#20c4ff"
+};
+
+const KNOWN_BRAND_COLORS: Record<string, string> = {
+  AAPL: "#a8b0b8",
+  AMZN: "#ff9900",
+  BTC: "#f7931a",
+  GOOGL: "#4285f4",
+  META: "#0866ff",
+  MSFT: "#7fba00",
+  NVDA: "#76b900",
+  TSLA: "#e82127"
 };
 
 export function buildVideoIdeas(scenario: ScenarioInput): VideoInput[] {
@@ -30,6 +58,7 @@ export function buildVideoInput(scenario: ScenarioInput, angle: CreativeAngle): 
   const hook = ANGLE_HOOKS[angle];
   const scenes = buildScenes({ scenario, angle, hook, amount, value, multiple, startLabel });
   const voiceover = scenes.map((scene) => scene.text).join(" ");
+  const visualStyle = STYLE_BY_ANGLE[angle];
 
   return {
     template: "couldamade-finance",
@@ -46,7 +75,10 @@ export function buildVideoInput(scenario: ScenarioInput, angle: CreativeAngle): 
     hook,
     voiceover,
     caption: buildCaption(scenario.company, scenario.ticker, amount, value, multiple, angle),
-    accentColor: "#28f296",
+    accentColor: ACCENT_BY_STYLE[visualStyle],
+    brandColor: KNOWN_BRAND_COLORS[scenario.ticker.toUpperCase()] ?? ACCENT_BY_STYLE[visualStyle],
+    visualStyle,
+    qualityPreset: PRESET_BY_ANGLE[angle],
     disclaimer: "Not financial advice. For education only.",
     scenes
   };
@@ -72,7 +104,7 @@ function buildScenes({
   const company = scenario.company;
   const linesByAngle: Record<CreativeAngle, string[]> = {
     regret: [
-      `${hook} if you bought ${company} instead.`,
+      `${hook}: ${company} would have changed the math.`,
       `Back in ${startLabel}, ${amount} was enough to start.`,
       `Then you just held it.`,
       `Today, that same position would be around ${value}.`,
@@ -88,7 +120,7 @@ function buildScenes({
       "Check another one at couldamade.com."
     ],
     shock: [
-      `${hook} for ${company}.`,
+      `${hook} ${company}.`,
       `If ${amount} went in during ${startLabel},`,
       "and you did absolutely nothing,",
       `it would be worth about ${value} today.`,
@@ -113,12 +145,39 @@ function buildScenes({
     ]
   };
 
-  return linesByAngle[angle].map((text, index) => ({
-    text,
-    startFrame: SCENE_TIMING[index][0],
-    endFrame: SCENE_TIMING[index][1],
+  return buildAdaptiveScenes(linesByAngle[angle]).map((scene, index) => ({
+    ...scene,
     emphasis: index === 3 ? value : undefined
   }));
+}
+
+function buildAdaptiveScenes(lines: string[]): ScriptScene[] {
+  const minFrames = [112, 106, 88, 126, 92, 72];
+  const weights = lines.map((line, index) => Math.max(minFrames[index], 54 + line.length * 1.6));
+  const totalWeight = weights.reduce((sum, value) => sum + value, 0);
+  const durations = weights.map((weight, index) => {
+    const frameCount = Math.round((weight / totalWeight) * TOTAL_FRAMES);
+    return Math.max(minFrames[index], frameCount);
+  });
+  while (durations.reduce((sum, value) => sum + value, 0) > TOTAL_FRAMES) {
+    const index = durations
+      .map((duration, durationIndex) => ({ duration, durationIndex, room: duration - minFrames[durationIndex] }))
+      .sort((a, b) => b.room - a.room)[0]?.durationIndex;
+    if (index === undefined || durations[index] <= minFrames[index]) break;
+    durations[index] -= 1;
+  }
+
+  let cursor = 0;
+  return lines.map((text, index) => {
+    const startFrame = Math.max(0, cursor - (index === 0 ? 0 : 10));
+    cursor += durations[index];
+    const endFrame = index === lines.length - 1 ? TOTAL_FRAMES : cursor;
+    return {
+      text,
+      startFrame,
+      endFrame
+    };
+  });
 }
 
 function buildCaption(
