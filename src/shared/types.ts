@@ -2,6 +2,8 @@ import { z } from "zod";
 
 export const platformSchema = z.enum(["tiktok", "instagram", "youtube"]);
 export const angleSchema = z.enum(["regret", "receipt", "shock", "lesson", "comeback"]);
+export const visualStyleSchema = z.enum(["terminal", "receipt", "regret", "clean", "newsroom"]);
+export const qualityPresetSchema = z.enum(["punchy", "clean-finance", "dramatic-regret"]);
 
 export const scriptSceneSchema = z.object({
   text: z.string().min(1).max(180),
@@ -25,6 +27,9 @@ export const videoInputSchema = z.object({
   angle: angleSchema.default("regret"),
   platform: platformSchema.default("tiktok"),
   accentColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default("#28f296"),
+  brandColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default("#28f296"),
+  visualStyle: visualStyleSchema.default("terminal"),
+  qualityPreset: qualityPresetSchema.default("punchy"),
   disclaimer: z.string().max(220).default("Not financial advice. For education only."),
   voiceoverAudioUrl: z.string().max(500).optional(),
   scenes: z.array(scriptSceneSchema).min(1).max(8).optional(),
@@ -35,6 +40,8 @@ export type VideoInput = z.infer<typeof videoInputSchema>;
 export type ScriptScene = z.infer<typeof scriptSceneSchema>;
 export type SocialPlatform = z.infer<typeof platformSchema>;
 export type CreativeAngle = z.infer<typeof angleSchema>;
+export type VisualStyle = z.infer<typeof visualStyleSchema>;
+export type QualityPreset = z.infer<typeof qualityPresetSchema>;
 
 export const scenarioSchema = z.object({
   ticker: z.string().min(1).max(12),
