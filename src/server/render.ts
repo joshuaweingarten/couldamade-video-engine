@@ -135,7 +135,7 @@ async function attachNarrationAudio(input: VideoInput, jobId: string): Promise<V
   const audioName = `${jobId}-voiceover.wav`;
   const audioPath = path.resolve("renders", audioName);
   await generateLocalNarration(input.voiceover, audioPath);
-  const port = Number(process.env.PORT ?? 3000);
+  const port = Number(process.env.PORT ?? 5000);
   return {
     ...input,
     voiceoverAudioUrl: `http://127.0.0.1:${port}/renders/${audioName}`
