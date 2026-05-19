@@ -210,8 +210,9 @@ function normaliseItem(raw: unknown): ExternalScenario | null {
 }
 
 function normaliseAssetArray(raw: unknown): CouldaMadeAsset[] {
-  if (!Array.isArray(raw)) return [];
-  return raw.map(normaliseAssetItem).filter(Boolean) as CouldaMadeAsset[];
+  const arr = unwrapArray(raw);
+  if (!arr) return [];
+  return arr.map(normaliseAssetItem).filter(Boolean) as CouldaMadeAsset[];
 }
 
 function normaliseAssetItem(raw: unknown): CouldaMadeAsset | null {
@@ -233,6 +234,14 @@ function unwrapSingle(body: unknown): unknown {
   const obj = body as Record<string, unknown>;
   if (obj.result && typeof obj.result === "object" && !Array.isArray(obj.result)) return obj.result;
   return body;
+}
+
+function unwrapArray(body: unknown): unknown[] | null {
+  if (Array.isArray(body)) return body;
+  if (!body || typeof body !== "object") return null;
+  const obj = body as Record<string, unknown>;
+  const key = ["results", "assets", "data", "items", "result"].find((item) => Array.isArray(obj[item]));
+  return key ? (obj[key] as unknown[]) : null;
 }
 
 function num(value: unknown): number | undefined {
