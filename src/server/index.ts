@@ -31,7 +31,7 @@ import {
 } from "./appStore";
 import { externalScenarioToScenario, registerCouldaMadeRoutes } from "./couldamade";
 
-const PORT = Number(process.env.PORT ?? 8787);
+const PORT = Number(process.env.PORT ?? 3000);
 
 await loadJobs();
 await loadAppData();
