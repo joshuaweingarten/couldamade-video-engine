@@ -43,16 +43,16 @@ function currencyGrowthPath(frame: number, startFrame: number): string {
     extrapolateRight: "clamp"
   });
   const points = [
-    [60, 1500],
-    [160, 1180],
-    [260, 1300],
-    [360, 760],
-    [470, 980],
-    [590, 560],
-    [690, 820],
-    [800, 360],
-    [940, 220],
-    [1040, 120]
+    [40, 1600],
+    [150, 1340],
+    [270, 1440],
+    [390, 1040],
+    [500, 1160],
+    [630, 900],
+    [740, 1060],
+    [860, 720],
+    [970, 580],
+    [1110, 450]
   ];
   const shown = Math.max(2, Math.ceil(points.length * p));
   return points
