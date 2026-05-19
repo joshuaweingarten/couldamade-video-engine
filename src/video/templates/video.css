@@ -1,6 +1,7 @@
 .video-frame {
   --accent: #28f296;
-  --hot: #ffe86b;
+  --accent-soft: #18b978;
+  --hot: #f2d766;
   --ink: #f7fff9;
   background: #030504;
   color: var(--ink);
@@ -26,7 +27,7 @@
 .market-tape {
   position: absolute;
   inset: 0;
-  opacity: 0.18;
+  opacity: 0.1;
   transform: rotate(-11deg) scale(1.12);
 }
 
@@ -58,7 +59,7 @@
 
 .floating-numbers span {
   position: absolute;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(255, 255, 255, 0.5);
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   font-size: 36px;
   font-weight: 900;
@@ -69,14 +70,15 @@
 
 .chart-line {
   position: absolute;
-  inset: -40px;
-  filter: drop-shadow(0 0 22px rgba(40, 242, 150, 0.48));
+  inset: -40px -120px -40px 80px;
+  opacity: 0.5;
+  filter: drop-shadow(0 0 14px rgba(40, 242, 150, 0.28));
 }
 
 .chart-line path {
   fill: none;
-  stroke: var(--accent);
-  stroke-width: 32;
+  stroke: var(--accent-soft);
+  stroke-width: 22;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
@@ -85,7 +87,7 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 50% 38%, rgba(40, 242, 150, 0.18), transparent 29%),
+    radial-gradient(circle at 50% 38%, rgba(40, 242, 150, 0.1), transparent 29%),
     linear-gradient(130deg, rgba(40, 242, 150, 0.08), transparent 30%, rgba(255, 232, 107, 0.06) 58%, transparent 75%);
   mix-blend-mode: screen;
 }
@@ -118,6 +120,7 @@
   gap: 24px;
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   text-transform: uppercase;
+  z-index: 4;
 }
 
 .ticker {
@@ -155,6 +158,7 @@
   text-shadow:
     0 10px 0 rgba(0, 0, 0, 0.45),
     0 30px 54px rgba(0, 0, 0, 0.62);
+  z-index: 5;
 }
 
 .hero-words span {
@@ -181,6 +185,7 @@
   padding: 18px 22px;
   transform: rotate(2deg);
   text-transform: uppercase;
+  z-index: 6;
 }
 
 .side-card span,
@@ -210,6 +215,13 @@
   padding: 0 78px 130px;
   text-align: center;
   text-transform: uppercase;
+  z-index: 5;
+}
+
+.scene-hold .center-stack,
+.scene-result .center-stack {
+  justify-content: center;
+  padding-bottom: 330px;
 }
 
 .eyebrow {
@@ -218,16 +230,27 @@
   font-size: 32px;
   font-weight: 900;
   letter-spacing: 0.16em;
+  text-shadow: 0 10px 30px rgba(0, 0, 0, 0.85);
+  z-index: 6;
 }
 
 .big-money,
 .pause-amount {
   color: var(--accent);
-  font-size: 202px;
-  line-height: 0.82;
+  font-size: 186px;
+  line-height: 0.84;
   text-shadow:
-    0 0 34px rgba(40, 242, 150, 0.42),
+    0 0 26px rgba(40, 242, 150, 0.34),
     0 16px 0 rgba(0, 0, 0, 0.38);
+  z-index: 6;
+}
+
+.scene-hold .pause-amount {
+  font-size: 174px;
+  background: rgba(0, 0, 0, 0.44);
+  border-radius: 8px;
+  padding: 14px 28px 8px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
 }
 
 .company-lockup {
@@ -278,11 +301,12 @@
 .hold-timeline {
   position: absolute;
   right: 96px;
-  bottom: 310px;
+  bottom: 250px;
   left: 96px;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 18px;
+  z-index: 6;
 }
 
 .hold-timeline div {
@@ -317,11 +341,19 @@
 
 .result-money {
   color: var(--accent);
-  font-size: 206px;
+  font-size: 186px;
   line-height: 0.82;
   text-shadow:
-    0 0 48px rgba(40, 242, 150, 0.52),
+    0 0 32px rgba(40, 242, 150, 0.42),
     0 18px 0 rgba(0, 0, 0, 0.42);
+  z-index: 6;
+}
+
+.scene-result .result-money {
+  background: rgba(0, 0, 0, 0.42);
+  border-radius: 8px;
+  padding: 16px 30px 8px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
 }
 
 .gain-pill {
@@ -334,6 +366,7 @@
   font-size: 34px;
   font-weight: 900;
   letter-spacing: 0.12em;
+  z-index: 6;
 }
 
 .burst-ring {
@@ -345,6 +378,8 @@
   border: 10px solid rgba(40, 242, 150, 0.2);
   border-radius: 999px;
   box-shadow: inset 0 0 70px rgba(40, 242, 150, 0.12), 0 0 60px rgba(40, 242, 150, 0.18);
+  opacity: 0.42;
+  z-index: 1;
 }
 
 .perspective {
