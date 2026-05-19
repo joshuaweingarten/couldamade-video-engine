@@ -1,14 +1,16 @@
 import { bundle } from "@remotion/bundler";
 import { renderMedia, selectComposition } from "@remotion/renderer";
-import { execFileSync } from "node:child_process";
+import { execFile, execFileSync } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { promisify } from "node:util";
 import type { RenderJob, VideoInput } from "../shared/types";
 import { safeSlug } from "../shared/format";
 import { writeCaptionFile } from "./captions";
 
 let bundledServeUrl: string | null = null;
 let resolvedBrowserExecutable: string | null | undefined;
+const execFileAsync = promisify(execFile);
 
 const chromiumOptions = {
   gl: "swangle",
@@ -126,37 +128,35 @@ export async function renderJobToFile(
 }
 
 async function attachNarrationAudio(input: VideoInput, jobId: string): Promise<VideoInput> {
-  if (input.voiceoverAudioUrl || !input.voiceover.trim() || !process.env.OPENAI_API_KEY) {
+  if (input.voiceoverAudioUrl || !input.voiceover.trim()) {
     return input;
   }
 
-  const audioName = `${jobId}-voiceover.mp3`;
+  const audioName = `${jobId}-voiceover.wav`;
   const audioPath = path.resolve("renders", audioName);
-  const response = await fetch("https://api.openai.com/v1/audio/speech", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: process.env.TTS_MODEL ?? "gpt-4o-mini-tts",
-      voice: process.env.TTS_VOICE ?? "coral",
-      input: input.voiceover.slice(0, 4096),
-      instructions: "Speak like a clear, energetic short-form finance narrator. Keep it quick, confident, and conversational.",
-      response_format: "mp3"
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error(`OpenAI TTS failed: ${await response.text()}`);
-  }
-
-  await writeFile(audioPath, Buffer.from(await response.arrayBuffer()));
+  await generateLocalNarration(input.voiceover, audioPath);
   const port = Number(process.env.PORT ?? 3000);
   return {
     ...input,
     voiceoverAudioUrl: `http://127.0.0.1:${port}/renders/${audioName}`
   };
+}
+
+async function generateLocalNarration(text: string, outputPath: string): Promise<void> {
+  const voice = process.env.LOCAL_TTS_VOICE ?? "en-us";
+  const speed = process.env.LOCAL_TTS_SPEED ?? "172";
+  const pitch = process.env.LOCAL_TTS_PITCH ?? "48";
+  await execFileAsync("espeak-ng", [
+    "-v",
+    voice,
+    "-s",
+    speed,
+    "-p",
+    pitch,
+    "-w",
+    outputPath,
+    text.slice(0, 4096)
+  ]);
 }
 
 async function withRenderStage<T>(stage: string, task: () => Promise<T>): Promise<T> {
