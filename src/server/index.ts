@@ -253,7 +253,50 @@ app.post("/api/content/tts", async (req, res) => {
     res.status(400).json({ error: "Missing text" });
     return;
   }
-  res.status(501).json({ error: "Use the render queue for local narration audio." });
+  if (!process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || !process.env.AI_INTEGRATIONS_OPENAI_API_KEY) {
+    res.status(501).json({ error: "Replit AI voice integration is not configured for preview TTS." });
+    return;
+  }
+
+  const speech = await fetch(`${process.env.AI_INTEGRATIONS_OPENAI_BASE_URL.replace(/\/$/, "")}/chat/completions`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.AI_INTEGRATIONS_OPENAI_API_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: "gpt-audio",
+      modalities: ["text", "audio"],
+      audio: { voice: process.env.REPLIT_AI_TTS_VOICE ?? "onyx", format: "mp3" },
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a voiceover narrator. Read the script the user provides word for word, exactly as written. " +
+            "Use a calm, confident, analytical tone with clear pronunciation and a measured short-form video pace. " +
+            "Do not add any words, commentary, or filler not present in the script."
+        },
+        { role: "user", content: text }
+      ]
+    })
+  });
+
+  if (!speech.ok) {
+    res.status(502).json({ error: "Voice generation failed", details: await speech.text() });
+    return;
+  }
+
+  const data = await speech.json() as { choices?: Array<{ message?: { audio?: { data?: string } } }> };
+  const audioBase64 = data.choices?.[0]?.message?.audio?.data;
+  if (!audioBase64) {
+    res.status(502).json({ error: "Voice generation returned no audio." });
+    return;
+  }
+
+  const audio = Buffer.from(audioBase64, "base64");
+  res.setHeader("Content-Type", "audio/mpeg");
+  res.setHeader("Cache-Control", "no-store");
+  res.send(audio);
 });
 
 const dashboardDir = path.resolve("dist/dashboard");
