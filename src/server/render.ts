@@ -137,12 +137,17 @@ async function attachNarrationAudio(input: VideoInput, jobId: string): Promise<V
   const useExternalTts = !useReplitAi && Boolean(externalTtsBaseUrl);
   const audioName = `${jobId}-voiceover.${useReplitAi || useExternalTts ? "mp3" : "wav"}`;
   const audioPath = path.resolve("renders", audioName);
-  if (useReplitAi) {
-    await generateReplitAiNarration(input.voiceover, audioPath);
-  } else if (externalTtsBaseUrl) {
-    await generateExternalNarration(input.voiceover, audioPath, externalTtsBaseUrl);
-  } else {
-    await generateLocalNarration(input.voiceover, audioPath);
+  try {
+    if (useReplitAi) {
+      await generateReplitAiNarration(input.voiceover, audioPath);
+    } else if (externalTtsBaseUrl) {
+      await generateExternalNarration(input.voiceover, audioPath, externalTtsBaseUrl);
+    } else {
+      await generateLocalNarration(input.voiceover, audioPath);
+    }
+  } catch (error) {
+    console.warn(`Narration audio unavailable for render ${jobId}; continuing without audio.`, error);
+    return input;
   }
   const port = Number(process.env.PORT ?? 5000);
   return {
@@ -155,7 +160,7 @@ function getExternalTtsBaseUrl(): string | undefined {
   const configured = process.env.EXTERNAL_TTS_BASE_URL?.trim();
   if (configured) return configured;
 
-  return "https://52ede6e5-94ef-483b-aaaf-f060ba7ecc34-00-i9ffldeixdtc.picard.replit.dev";
+  return undefined;
 }
 
 async function generateExternalNarration(text: string, outputPath: string, baseUrl: string): Promise<void> {
@@ -168,7 +173,12 @@ async function generateExternalNarration(text: string, outputPath: string, baseU
   });
 
   if (!response.ok) {
-    throw new Error(`External TTS failed: ${await response.text()}`);
+    throw new Error(`External TTS failed: ${summarizeTtsError(await response.text())}`);
+  }
+
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.includes("audio")) {
+    throw new Error(`External TTS returned ${contentType || "non-audio content"}.`);
   }
 
   const audio = Buffer.from(await response.arrayBuffer());
@@ -176,6 +186,16 @@ async function generateExternalNarration(text: string, outputPath: string, baseU
     throw new Error("External TTS returned an empty audio file.");
   }
   await writeFile(outputPath, audio);
+}
+
+function summarizeTtsError(body: string): string {
+  const plain = body
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return plain.slice(0, 300) || "No error body returned.";
 }
 
 async function generateReplitAiNarration(text: string, outputPath: string): Promise<void> {
