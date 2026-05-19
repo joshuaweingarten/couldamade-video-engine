@@ -31,7 +31,8 @@ import {
 } from "./appStore";
 import { externalScenarioToScenario, registerCouldaMadeRoutes } from "./couldamade";
 
-const PORT = Number(process.env.PORT ?? 5000);
+const PRIMARY_PORT = Number(process.env.PORT ?? 5000);
+const PORTS = [...new Set([PRIMARY_PORT, 5000, 3000])];
 
 await loadJobs();
 await loadAppData();
@@ -261,6 +262,24 @@ app.get("*", (_req, res) => {
   res.sendFile(path.join(dashboardDir, "index.html"));
 });
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`CouldaMade video engine API listening on http://0.0.0.0:${PORT}`);
-});
+let listening = 0;
+for (const port of PORTS) {
+  const server = app.listen(port, "0.0.0.0", () => {
+    listening += 1;
+    console.log(`CouldaMade video engine API listening on http://0.0.0.0:${port}`);
+  });
+  server.on("error", (error: NodeJS.ErrnoException) => {
+    if (error.code === "EADDRINUSE") {
+      console.log(`Port ${port} is already in use, skipping it.`);
+      return;
+    }
+    throw error;
+  });
+}
+
+setTimeout(() => {
+  if (listening === 0) {
+    console.error(`Could not listen on any expected Replit port: ${PORTS.join(", ")}`);
+    process.exit(1);
+  }
+}, 1000);
