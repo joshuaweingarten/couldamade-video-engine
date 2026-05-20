@@ -28,6 +28,7 @@ export const videoInputSchema = z.object({
   platform: platformSchema.default("tiktok"),
   accentColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default("#28f296"),
   brandColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default("#28f296"),
+  logoUrl: z.string().max(500).optional(),
   visualStyle: visualStyleSchema.default("terminal"),
   qualityPreset: qualityPresetSchema.default("punchy"),
   disclaimer: z.string().max(220).default("Not financial advice. For education only."),
@@ -52,6 +53,7 @@ export const scenarioSchema = z.object({
   year: z.coerce.number().int().min(1900).max(2100),
   month: z.coerce.number().int().min(1).max(12).default(1),
   day: z.coerce.number().int().min(1).max(31).default(1),
+  logoUrl: z.string().max(500).optional(),
   platform: platformSchema.default("tiktok"),
   angles: z.array(angleSchema).min(1).max(5).default(["regret", "shock", "lesson"])
 });
@@ -84,7 +86,7 @@ export interface CreateRenderResponse {
   job: RenderJob;
 }
 
-export type ContentStatus = "draft" | "approved" | "scheduled" | "published";
+export type ContentStatus = "draft" | "approved" | "published";
 
 export interface ContentItem {
   id: number;
@@ -114,16 +116,6 @@ export interface SavedVideo {
   createdAt: string;
 }
 
-export interface ScheduleEntry {
-  id: number;
-  contentItemId: number;
-  scheduledFor: string;
-  platform: SocialPlatform;
-  status: "scheduled" | "posted" | "failed";
-  createdAt: string;
-  updatedAt: string;
-}
-
 export const createSavedVideoSchema = videoInputSchema.pick({
   template: true,
   ticker: true,
@@ -134,6 +126,7 @@ export const createSavedVideoSchema = videoInputSchema.pick({
   day: true,
   amount: true,
   value: true,
+  logoUrl: true,
   voiceover: true,
   caption: true
 });
@@ -143,18 +136,8 @@ export const createContentItemSchema = z.object({
   body: z.string().min(1).max(2000),
   caption: z.string().min(1).max(500),
   platform: platformSchema.default("tiktok"),
-  status: z.enum(["draft", "approved", "scheduled", "published"]).default("draft"),
+  status: z.enum(["draft", "approved", "published"]).default("draft"),
   video: videoInputSchema
 });
 
 export const updateContentItemSchema = createContentItemSchema.partial();
-
-export const createScheduleEntrySchema = z.object({
-  contentItemId: z.coerce.number().int().positive(),
-  scheduledFor: z.string().min(1),
-  platform: platformSchema.default("tiktok")
-});
-
-export const updateScheduleEntrySchema = createScheduleEntrySchema.partial().extend({
-  status: z.enum(["scheduled", "posted", "failed"]).optional()
-});
