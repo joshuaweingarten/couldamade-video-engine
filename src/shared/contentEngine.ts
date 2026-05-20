@@ -55,8 +55,9 @@ export function buildVideoInput(scenario: ScenarioInput, angle: CreativeAngle): 
   const amount = formatDollar(scenario.amount);
   const value = formatDollar(scenario.value);
   const multiple = scenario.value / scenario.amount;
+  const spokenMultiple = formatSpokenMultiple(multiple);
   const hook = ANGLE_HOOKS[angle];
-  const scenes = buildScenes({ scenario, angle, hook, amount, value, multiple, startLabel });
+  const scenes = buildScenes({ scenario, angle, hook, amount, value, spokenMultiple, startLabel });
   const voiceover = scenes.map((scene) => scene.text).join(" ");
   const visualStyle = STYLE_BY_ANGLE[angle];
 
@@ -90,7 +91,7 @@ function buildScenes({
   hook,
   amount,
   value,
-  multiple,
+  spokenMultiple,
   startLabel
 }: {
   scenario: ScenarioInput;
@@ -98,7 +99,7 @@ function buildScenes({
   hook: string;
   amount: string;
   value: string;
-  multiple: number;
+  spokenMultiple: string;
   startLabel: string;
 }): ScriptScene[] {
   const company = scenario.company;
@@ -108,7 +109,7 @@ function buildScenes({
       `Back in ${startLabel}, ${amount} was enough to start.`,
       `Then you just held it.`,
       `Today, that same position would be around ${value}.`,
-      `That is about ${multiple.toFixed(1)} times your money.`,
+      `That is about ${spokenMultiple} times your money.`,
       "Run yours now at couldamade.com."
     ],
     receipt: [
@@ -116,7 +117,7 @@ function buildScenes({
       `${amount} in. No trading. No timing.`,
       "Just one decision and patience.",
       `The ending number is roughly ${value}.`,
-      `That is a ${multiple.toFixed(1)}x receipt.`,
+      `That is a ${spokenMultiple}x receipt.`,
       "Check another one at couldamade.com."
     ],
     shock: [
@@ -124,7 +125,7 @@ function buildScenes({
       `If ${amount} went in during ${startLabel},`,
       "and you did absolutely nothing,",
       `it would be worth about ${value} today.`,
-      `${multiple.toFixed(1)}x is why timing matters.`,
+      `${spokenMultiple}x is why timing matters.`,
       "Run your what-if at couldamade.com."
     ],
     lesson: [
@@ -132,7 +133,7 @@ function buildScenes({
       `${amount} invested in ${startLabel}.`,
       "No perfect exit. No daily panic.",
       `Just holding turns it into about ${value}.`,
-      `The lesson is the ${multiple.toFixed(1)}x gap.`,
+      `The lesson is the ${spokenMultiple}x gap.`,
       "Try your own at couldamade.com."
     ],
     comeback: [
@@ -140,7 +141,7 @@ function buildScenes({
       `${amount} back in ${startLabel}.`,
       "The chart was never a straight line.",
       `But the current value is about ${value}.`,
-      `That is roughly ${multiple.toFixed(1)} times back.`,
+      `That is roughly ${spokenMultiple} times back.`,
       "Make your own at couldamade.com."
     ]
   };
@@ -197,4 +198,8 @@ function buildCaption(
   };
 
   return `${prefixByAngle[angle]} ${amount} in ${company} (${ticker.toUpperCase()}) would be about ${value} now, around ${multiple.toFixed(1)}x. Not financial advice.`;
+}
+
+function formatSpokenMultiple(multiple: number): string {
+  return Math.max(1, Math.round(multiple)).toLocaleString("en-US");
 }
