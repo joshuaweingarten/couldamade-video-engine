@@ -189,7 +189,13 @@ function SpokenCaption({ text, opacity }: { text: string; opacity: number }) {
 
 function TeslaLogo() {
   return (
-    <svg className="tesla-logo" viewBox="0 0 100 100" role="img" aria-label="Tesla">
+    <svg
+      className="tesla-logo"
+      viewBox="0 0 100 100"
+      role="img"
+      aria-label="Tesla"
+      style={{ display: "block", width: "100%", height: "100%", fill: "#e82127" }}
+    >
       <path d="M16 24C35 10 65 10 84 24L77 33C61 24 39 24 23 33Z" />
       <path d="M42 30H58L65 88H35Z" />
       <path d="M29 40C42 35 58 35 71 40L65 49C56 45 44 45 35 49Z" />
