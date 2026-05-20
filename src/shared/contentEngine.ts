@@ -114,7 +114,7 @@ function buildScenes({
     ],
     receipt: [
       `${hook}: ${company}, ${startLabel}.`,
-      `${amount} in. No trading. No timing.`,
+      `${amount} in. No trading. Just saving.`,
       "Just one decision and patience.",
       `The ending number is roughly ${value}.`,
       `That is a ${spokenMultiple}x receipt.`,
@@ -125,7 +125,7 @@ function buildScenes({
       `If ${amount} went in during ${startLabel},`,
       "and you did absolutely nothing,",
       `it would be worth about ${value} today.`,
-      `${spokenMultiple}x is why timing matters.`,
+      `${spokenMultiple}x is what saving over time can do.`,
       "Run your what-if at couldamade.com."
     ],
     lesson: [
@@ -194,7 +194,7 @@ function buildCaption(
     receipt: "Here is the receipt.",
     shock: "This number surprised me.",
     lesson: "The boring move won.",
-    comeback: "The line was messy, but time mattered."
+    comeback: "The line was messy, but steady saving mattered."
   };
 
   return `${prefixByAngle[angle]} ${amount} in ${company} (${ticker.toUpperCase()}) would be about ${value} now, around ${multiple.toFixed(1)}x. Not financial advice.`;
