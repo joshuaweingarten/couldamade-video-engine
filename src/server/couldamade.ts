@@ -15,6 +15,7 @@ export interface ExternalScenario {
   finalValue: number;
   returnMultiple?: number;
   dataSource?: string;
+  logoUrl?: string;
 }
 
 export interface CouldaMadeAsset {
@@ -120,6 +121,7 @@ export function externalScenarioToScenario(input: ExternalScenario): ScenarioInp
     year: safeDate.getUTCFullYear(),
     month: safeDate.getUTCMonth() + 1,
     day: safeDate.getUTCDate(),
+    logoUrl: input.logoUrl,
     platform: "tiktok",
     angles: ["regret", "shock", "lesson"]
   };
@@ -205,7 +207,8 @@ function normaliseItem(raw: unknown): ExternalScenario | null {
     amountInvested,
     finalValue,
     returnMultiple: num(item.multiple) ?? num(item.returnMultiple) ?? num(item.multiplier) ?? finalValue / amountInvested,
-    dataSource: str(item.source) ?? str(item.dataSource) ?? str(item.data_source) ?? "couldamade.com"
+    dataSource: str(item.source) ?? str(item.dataSource) ?? str(item.data_source) ?? "couldamade.com",
+    logoUrl: str(item.logoUrl) ?? str(item.logo_url)
   };
 }
 
