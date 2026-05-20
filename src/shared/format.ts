@@ -1,8 +1,13 @@
 export function formatDollar(value: number): string {
-  if (value >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(1)}B`;
-  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `$${(value / 1_000).toFixed(value >= 10_000 ? 0 : 1)}K`;
+  if (value >= 1_000_000_000) return `$${formatCompactNumber(value / 1_000_000_000)}B`;
+  if (value >= 1_000_000) return `$${formatCompactNumber(value / 1_000_000)}M`;
+  if (value >= 10_000) return `$${Math.round(value / 1_000).toLocaleString("en-US")}K`;
   return `$${Math.round(value).toLocaleString("en-US")}`;
+}
+
+function formatCompactNumber(value: number): string {
+  const rounded = value >= 10 ? value.toFixed(0) : value.toFixed(1);
+  return rounded.replace(/\.0$/, "");
 }
 
 export function formatDate(year: number, month: number, day: number): string {
