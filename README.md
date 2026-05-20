@@ -51,8 +51,8 @@ Narration first uses Replit's AI voice integration when the workspace provides
 `AI_INTEGRATIONS_OPENAI_BASE_URL` and `AI_INTEGRATIONS_OPENAI_API_KEY`. This is
 the natural voice path used by the original app.
 
-If that integration is not available, the app calls the original viral content
-scheduler's `/api/content/tts` endpoint through `EXTERNAL_TTS_BASE_URL`, which
+If that integration is not available, the app calls an external
+`/api/content/tts` endpoint through `EXTERNAL_TTS_BASE_URL`, which
 keeps the same natural voice without manually adding an API key to this Repl.
 If that endpoint is unavailable, the app falls back to local `espeak-ng`
 narration so renders still complete. The local fallback can be tuned with
@@ -154,7 +154,7 @@ can be added behind environment variables:
 - A voice provider to generate narration audio.
 - Durable storage such as Cloudflare R2 or S3 if Replit file persistence becomes
   limiting.
-- A scheduler that queues 25 videos per week.
+- Batch tools for preparing larger monthly video runs.
 
 ## Why This Architecture
 
