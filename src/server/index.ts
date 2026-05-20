@@ -5,10 +5,8 @@ import {
   batchRenderSchema,
   createContentItemSchema,
   createSavedVideoSchema,
-  createScheduleEntrySchema,
   scenarioSchema,
   updateContentItemSchema,
-  updateScheduleEntrySchema,
   videoInputSchema
 } from "../shared/types";
 import { buildVideoIdeas } from "../shared/contentEngine";
@@ -17,23 +15,24 @@ import { getJob, listJobs, loadJobs } from "./jobStore";
 import {
   createContentItem,
   createSavedVideo,
-  createScheduleEntry,
   deleteContentItem,
   deleteSavedVideo,
-  deleteScheduleEntry,
   getContentItem,
   listContentItems,
   listSavedVideos,
-  listScheduleEntries,
   loadAppData,
-  updateContentItem,
-  updateScheduleEntry
+  updateContentItem
 } from "./appStore";
 import { externalScenarioToScenario, registerCouldaMadeRoutes } from "./couldamade";
 
 const PRIMARY_PORT = Number(process.env.PORT ?? 5000);
 const PORTS = [...new Set([PRIMARY_PORT, 5000, 3000])];
 const REPLIT_AI_TTS_MODEL = process.env.REPLIT_AI_TTS_MODEL ?? "gpt-audio-mini";
+const NARRATION_STYLE_PROMPT =
+  "You are a sharp short-form finance narrator. Read the script the user provides word for word, exactly as written. " +
+  "Use a subtle British or international accent if the voice model supports it. Keep the delivery dry, confident, slightly edgy, and skeptical, " +
+  "like you are pointing out an uncomfortable money truth. Use crisp pacing and clear pronunciation. No hype, no radio-announcer energy, " +
+  "and no friendly customer-service tone. Do not add any words, commentary, or filler not present in the script.";
 
 await loadJobs();
 await loadAppData();
@@ -206,48 +205,6 @@ app.delete("/api/videos/:id", async (req, res) => {
   res.status(deleted ? 204 : 404).send(deleted ? undefined : { error: "Saved video not found" });
 });
 
-app.get("/api/schedule/entries", (req, res) => {
-  const platform = typeof req.query.platform === "string" ? req.query.platform : undefined;
-  if (platform && !["tiktok", "instagram", "youtube"].includes(platform)) {
-    res.status(400).json({ error: "Invalid platform" });
-    return;
-  }
-  res.json(listScheduleEntries(platform as "tiktok" | "instagram" | "youtube" | undefined));
-});
-
-app.post("/api/schedule/entries", async (req, res) => {
-  const parsed = createScheduleEntrySchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: "Invalid schedule entry", details: parsed.error.flatten() });
-    return;
-  }
-  const entry = await createScheduleEntry(parsed.data);
-  if (!entry) {
-    res.status(404).json({ error: "Content item not found" });
-    return;
-  }
-  res.status(201).json(entry);
-});
-
-app.put("/api/schedule/entries/:id", async (req, res) => {
-  const parsed = updateScheduleEntrySchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: "Invalid schedule update", details: parsed.error.flatten() });
-    return;
-  }
-  const entry = await updateScheduleEntry(Number(req.params.id), parsed.data);
-  if (!entry) {
-    res.status(404).json({ error: "Schedule entry not found" });
-    return;
-  }
-  res.json(entry);
-});
-
-app.delete("/api/schedule/entries/:id", async (req, res) => {
-  const deleted = await deleteScheduleEntry(Number(req.params.id));
-  res.status(deleted ? 204 : 404).send(deleted ? undefined : { error: "Schedule entry not found" });
-});
-
 app.post("/api/content/tts", async (req, res) => {
   const text = typeof req.body?.text === "string" ? req.body.text.slice(0, 4096) : "";
   if (!text.trim()) {
@@ -269,10 +226,7 @@ app.post("/api/content/tts", async (req, res) => {
         messages: [
           {
             role: "system",
-            content:
-              "You are a voiceover narrator. Read the script the user provides word for word, exactly as written. " +
-              "Use a calm, confident, analytical tone with clear pronunciation and a measured short-form video pace. " +
-              "Do not add any words, commentary, or filler not present in the script."
+            content: NARRATION_STYLE_PROMPT
           },
           { role: "user", content: text }
         ]
