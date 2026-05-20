@@ -33,6 +33,7 @@ import { externalScenarioToScenario, registerCouldaMadeRoutes } from "./couldama
 
 const PRIMARY_PORT = Number(process.env.PORT ?? 5000);
 const PORTS = [...new Set([PRIMARY_PORT, 5000, 3000])];
+const REPLIT_AI_TTS_MODEL = process.env.REPLIT_AI_TTS_MODEL ?? "gpt-audio-mini";
 
 await loadJobs();
 await loadAppData();
@@ -182,8 +183,8 @@ app.put("/api/content/items/:id", async (req, res) => {
   res.json(item);
 });
 
-app.delete("/api/content/items/:id", async (_req, res) => {
-  const deleted = await deleteContentItem(Number(_req.params.id));
+app.delete("/api/content/items/:id", async (req, res) => {
+  const deleted = await deleteContentItem(Number(req.params.id));
   res.status(deleted ? 204 : 404).send(deleted ? undefined : { error: "Content item not found" });
 });
 
@@ -262,7 +263,7 @@ app.post("/api/content/tts", async (req, res) => {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "gpt-audio",
+        model: REPLIT_AI_TTS_MODEL,
         modalities: ["text", "audio"],
         audio: { voice: process.env.REPLIT_AI_TTS_VOICE ?? "onyx", format: "mp3" },
         messages: [
