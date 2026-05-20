@@ -12,6 +12,7 @@ import { useState } from "react";
 import type React from "react";
 import type { VideoInput } from "../../shared/types";
 import { formatDate, formatDollar } from "../../shared/format";
+import { getBrandColor, getBrandIcon, getBrandLogoUrl } from "../../shared/brandIconDatabase";
 import "./video.css";
 
 function sceneOpacity(frame: number, start: number, end: number): number {
@@ -187,22 +188,6 @@ function SpokenCaption({ text, opacity }: { text: string; opacity: number }) {
   );
 }
 
-function TeslaLogo() {
-  return (
-    <svg
-      className="tesla-logo"
-      viewBox="0 0 100 100"
-      role="img"
-      aria-label="Tesla"
-      style={{ display: "block", width: "100%", height: "100%", fill: "#e82127" }}
-    >
-      <path d="M16 24C35 10 65 10 84 24L77 33C61 24 39 24 23 33Z" />
-      <path d="M42 30H58L65 88H35Z" />
-      <path d="M29 40C42 35 58 35 71 40L65 49C56 45 44 45 35 49Z" />
-    </svg>
-  );
-}
-
 function LogoImage({ logoUrl, initials }: { logoUrl?: string; initials: string }) {
   const [failed, setFailed] = useState(false);
   if (logoUrl && !failed) {
@@ -211,12 +196,27 @@ function LogoImage({ logoUrl, initials }: { logoUrl?: string; initials: string }
   return <span>{initials}</span>;
 }
 
+function BrandIconSvg({ ticker }: { ticker: string }) {
+  const icon = getBrandIcon(ticker);
+  if (!icon) return null;
+  return (
+    <svg
+      className="brand-icon-svg"
+      viewBox={icon.viewBox}
+      role="img"
+      aria-label={icon.title}
+      style={{ display: "block", width: "100%", height: "100%", fill: `#${icon.hex ?? "111111"}` }}
+      dangerouslySetInnerHTML={{ __html: icon.body }}
+    />
+  );
+}
+
 function BrandMark({ logoUrl, initials, ticker }: { logoUrl?: string; initials: string; ticker: string }) {
-  const isTesla = ticker.toUpperCase() === "TSLA";
-  if (isTesla || logoUrl) {
+  const hasLocalIcon = Boolean(getBrandIcon(ticker));
+  if (hasLocalIcon || logoUrl) {
     return (
-      <div className={`brand-badge has-logo${isTesla ? " tesla-badge" : ""}`}>
-        {isTesla ? <TeslaLogo /> : <LogoImage logoUrl={logoUrl} initials={initials} />}
+      <div className="brand-badge has-logo">
+        {hasLocalIcon ? <BrandIconSvg ticker={ticker} /> : <LogoImage logoUrl={logoUrl} initials={initials} />}
       </div>
     );
   }
@@ -228,11 +228,11 @@ function BrandMark({ logoUrl, initials, ticker }: { logoUrl?: string; initials: 
 }
 
 function EndLogo({ logoUrl, initials, ticker }: { logoUrl?: string; initials: string; ticker: string }) {
-  const isTesla = ticker.toUpperCase() === "TSLA";
-  if (isTesla || logoUrl) {
+  const hasLocalIcon = Boolean(getBrandIcon(ticker));
+  if (hasLocalIcon || logoUrl) {
     return (
-      <div className={`end-logo has-logo${isTesla ? " tesla-badge" : ""}`}>
-        {isTesla ? <TeslaLogo /> : <LogoImage logoUrl={logoUrl} initials={initials} />}
+      <div className="end-logo has-logo">
+        {hasLocalIcon ? <BrandIconSvg ticker={ticker} /> : <LogoImage logoUrl={logoUrl} initials={initials} />}
       </div>
     );
   }
@@ -260,13 +260,13 @@ export function CouldaMadeFinanceVideo(input: VideoInput) {
   const cameraScale = 1.03 + Math.sin(frame / 115) * 0.018;
   const styleName = input.visualStyle ?? "terminal";
   const presetName = input.qualityPreset ?? "punchy";
-  const brandColor = input.brandColor ?? input.accentColor;
+  const brandColor = getBrandColor(input.ticker) ?? input.brandColor ?? input.accentColor;
   const isGain = growth >= 1;
   const resultColor = isGain ? "#28f296" : "#ff4d5d";
   const resultSoftColor = isGain ? "#18b978" : "#a72a38";
   const resultHotColor = isGain ? "#f2d766" : "#ffcf5a";
   const brandInitials = getBrandInitials(input.company, input.ticker);
-  const logoUrl = input.logoUrl?.trim() || undefined;
+  const logoUrl = input.logoUrl?.trim() || getBrandLogoUrl(input.ticker);
 
   const pulse = spring({ frame, fps, config: { damping: 18, stiffness: 80 } });
   const resultScale = spring({
