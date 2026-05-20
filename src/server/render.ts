@@ -17,6 +17,11 @@ const chromiumOptions = {
   enableMultiProcessOnLinux: false
 } as const;
 const REPLIT_AI_TTS_MODEL = process.env.REPLIT_AI_TTS_MODEL ?? "gpt-audio-mini";
+const NARRATION_STYLE_PROMPT =
+  "You are a sharp short-form finance narrator. Read the script the user provides word for word, exactly as written. " +
+  "Use a subtle British or international accent if the voice model supports it. Keep the delivery dry, confident, slightly edgy, and skeptical, " +
+  "like you are pointing out an uncomfortable money truth. Use crisp pacing and clear pronunciation. No hype, no radio-announcer energy, " +
+  "and no friendly customer-service tone. Do not add any words, commentary, or filler not present in the script.";
 
 async function getBundleUrl(): Promise<string> {
   if (bundledServeUrl) return bundledServeUrl;
@@ -228,10 +233,7 @@ async function generateReplitAiNarration(text: string, outputPath: string): Prom
       messages: [
         {
           role: "system",
-          content:
-            "You are a voiceover narrator. Read the script the user provides word for word, exactly as written. " +
-            "Use a calm, confident, analytical tone with clear pronunciation and a measured short-form video pace. " +
-            "Do not add any words, commentary, or filler not present in the script."
+          content: NARRATION_STYLE_PROMPT
         },
         { role: "user", content: text.slice(0, 4096) }
       ]
