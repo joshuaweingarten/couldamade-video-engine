@@ -2,9 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type {
   ContentItem,
-  ScheduleEntry,
   SavedVideo,
-  SocialPlatform,
   VideoInput
 } from "../shared/types";
 
@@ -14,10 +12,8 @@ const APP_FILE = path.join(DATA_DIR, "app.json");
 type AppData = {
   nextContentId: number;
   nextSavedVideoId: number;
-  nextScheduleId: number;
   contentItems: ContentItem[];
   savedVideos: SavedVideo[];
-  scheduleEntries: ScheduleEntry[];
 };
 
 let data: AppData = emptyData();
@@ -68,7 +64,6 @@ export async function updateContentItem(id: number, patch: Partial<Omit<ContentI
 export async function deleteContentItem(id: number): Promise<boolean> {
   const before = data.contentItems.length;
   data.contentItems = data.contentItems.filter((item) => item.id !== id);
-  data.scheduleEntries = data.scheduleEntries.filter((entry) => entry.contentItemId !== id);
   await saveAppData();
   return data.contentItems.length !== before;
 }
@@ -105,54 +100,11 @@ export async function deleteSavedVideo(id: number): Promise<boolean> {
   return data.savedVideos.length !== before;
 }
 
-export function listScheduleEntries(platform?: SocialPlatform): ScheduleEntry[] {
-  return data.scheduleEntries
-    .filter((entry) => !platform || entry.platform === platform)
-    .sort((a, b) => a.scheduledFor.localeCompare(b.scheduledFor));
-}
-
-export async function createScheduleEntry(input: {
-  contentItemId: number;
-  scheduledFor: string;
-  platform: SocialPlatform;
-}): Promise<ScheduleEntry | undefined> {
-  if (!getContentItem(input.contentItemId)) return undefined;
-  const now = new Date().toISOString();
-  const entry: ScheduleEntry = {
-    id: data.nextScheduleId++,
-    status: "scheduled",
-    createdAt: now,
-    updatedAt: now,
-    ...input
-  };
-  data.scheduleEntries.push(entry);
-  await updateContentItem(input.contentItemId, { status: "scheduled" });
-  await saveAppData();
-  return entry;
-}
-
-export async function updateScheduleEntry(id: number, patch: Partial<Omit<ScheduleEntry, "id" | "createdAt">>): Promise<ScheduleEntry | undefined> {
-  const entry = data.scheduleEntries.find((item) => item.id === id);
-  if (!entry) return undefined;
-  Object.assign(entry, patch, { updatedAt: new Date().toISOString() });
-  await saveAppData();
-  return entry;
-}
-
-export async function deleteScheduleEntry(id: number): Promise<boolean> {
-  const before = data.scheduleEntries.length;
-  data.scheduleEntries = data.scheduleEntries.filter((entry) => entry.id !== id);
-  await saveAppData();
-  return data.scheduleEntries.length !== before;
-}
-
 function emptyData(): AppData {
   return {
     nextContentId: 1,
     nextSavedVideoId: 1,
-    nextScheduleId: 1,
     contentItems: [],
-    savedVideos: [],
-    scheduleEntries: []
+    savedVideos: []
   };
 }
