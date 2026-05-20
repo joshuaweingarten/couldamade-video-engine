@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { CalendarPlus, Download, FileText, Layers, Play, RefreshCw, Search, Send, Shuffle, Sparkles } from "lucide-react";
-import type { ContentItem, CreativeAngle, RenderJob, ScenarioInput, ScheduleEntry, VideoInput } from "../shared/types";
+import { Download, FileText, Layers, Play, RefreshCw, Search, Send, Shuffle, Sparkles } from "lucide-react";
+import type { ContentItem, CreativeAngle, RenderJob, ScenarioInput, VideoInput } from "../shared/types";
 import "./styles.css";
 
 const defaultScenario: ScenarioInput = {
@@ -32,19 +32,20 @@ type ExternalScenario = {
   startDate?: string;
   amountInvested: number;
   finalValue: number;
+  logoUrl?: string;
 };
 
 type CouldaMadeAsset = {
   asset: string;
   assetType: string;
   name?: string;
+  logoUrl?: string;
 };
 
 function App() {
   const [scenario, setScenario] = useState<ScenarioInput>(defaultScenario);
   const [ideas, setIdeas] = useState<VideoInput[]>([]);
   const [contentItems, setContentItems] = useState<ContentItem[]>([]);
-  const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
   const [jobs, setJobs] = useState<RenderJob[]>([]);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState("");
@@ -54,15 +55,13 @@ function App() {
   const completedCount = jobs.filter((job) => job.status === "done").length;
 
   async function refreshJobs() {
-    const [jobsRes, contentRes, scheduleRes] = await Promise.all([
+    const [jobsRes, contentRes] = await Promise.all([
       fetch("/api/jobs"),
-      fetch("/api/content/items"),
-      fetch("/api/schedule/entries")
+      fetch("/api/content/items")
     ]);
     const data = (await jobsRes.json()) as { jobs: RenderJob[] };
     setJobs(data.jobs);
     setContentItems((await contentRes.json()) as ContentItem[]);
-    setSchedule((await scheduleRes.json()) as ScheduleEntry[]);
   }
 
   useEffect(() => {
@@ -216,7 +215,8 @@ function App() {
       ...prev,
       ticker: asset.asset,
       company: cleanCompanyName(asset.name ?? asset.asset),
-      assetType: asset.assetType
+      assetType: asset.assetType,
+      logoUrl: asset.logoUrl
     }));
     setAssetResults([]);
   }
@@ -235,20 +235,11 @@ function App() {
       value: Math.round(external.finalValue),
       year: safeDate.getUTCFullYear(),
       month: safeDate.getUTCMonth() + 1,
-      day: safeDate.getUTCDate()
+      day: safeDate.getUTCDate(),
+      logoUrl: external.logoUrl
     };
     setScenario(nextScenario);
     void generateIdeas(nextScenario);
-  }
-
-  async function scheduleContent(item: ContentItem) {
-    const scheduledFor = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-    await fetch("/api/schedule/entries", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contentItemId: item.id, platform: item.platform, scheduledFor })
-    });
-    await refreshJobs();
   }
 
   return (
@@ -425,26 +416,8 @@ function App() {
                       <h3>{item.hook}</h3>
                       <p>{item.platform} - {item.status}</p>
                     </div>
-                    <button className="icon-button compact" type="button" onClick={() => scheduleContent(item)} aria-label="Schedule content">
-                      <CalendarPlus size={18} />
-                    </button>
                   </div>
                   <p className="library-copy">{item.caption}</p>
-                </article>
-              ))}
-            </div>
-          )}
-          {schedule.length > 0 && (
-            <div className="library-section">
-              <h3>Schedule</h3>
-              {schedule.slice(0, 8).map((entry) => (
-                <article className="job-card" key={entry.id}>
-                  <div className="job-main">
-                    <div>
-                      <h3>{entry.platform}</h3>
-                      <p>{new Date(entry.scheduledFor).toLocaleString()} - {entry.status}</p>
-                    </div>
-                  </div>
                 </article>
               ))}
             </div>
