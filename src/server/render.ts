@@ -16,6 +16,7 @@ const chromiumOptions = {
   gl: "swangle",
   enableMultiProcessOnLinux: false
 } as const;
+const REPLIT_AI_TTS_MODEL = process.env.REPLIT_AI_TTS_MODEL ?? "gpt-audio-mini";
 
 async function getBundleUrl(): Promise<string> {
   if (bundledServeUrl) return bundledServeUrl;
@@ -218,7 +219,7 @@ async function generateReplitAiNarration(text: string, outputPath: string): Prom
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      model: "gpt-audio",
+      model: REPLIT_AI_TTS_MODEL,
       modalities: ["text", "audio"],
       audio: {
         voice: process.env.REPLIT_AI_TTS_VOICE ?? "onyx",
