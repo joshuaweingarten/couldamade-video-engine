@@ -84,6 +84,27 @@ function getScene(input: VideoInput, index: number, fallback: [number, number]) 
   return input.scenes?.[index] ?? { text: "", startFrame: fallback[0], endFrame: fallback[1] };
 }
 
+function getCompanyFontSize(company: string): number {
+  const words = company.split(/\s+/).filter(Boolean);
+  const longestWord = Math.max(...words.map((word) => word.length), 1);
+  const sizeForLongestWord = Math.floor(920 / (longestWord * 0.62));
+  const sizeForFullName = Math.floor(122 - Math.max(0, company.length - 18) * 1.6);
+  return Math.max(58, Math.min(122, sizeForLongestWord, sizeForFullName));
+}
+
+function CompanyName({ company }: { company: string }) {
+  const words = company.split(/\s+/).filter(Boolean);
+  return (
+    <div className="company" style={{ "--company-font-size": `${getCompanyFontSize(company)}px` } as React.CSSProperties}>
+      {words.map((word, index) => (
+        <span className="company-word" key={`${word}-${index}`}>
+          {word}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function SceneShell({
   opacity,
   progress,
@@ -165,6 +186,32 @@ function SpokenCaption({ text, opacity }: { text: string; opacity: number }) {
   );
 }
 
+function BrandMark({ logoUrl, initials }: { logoUrl?: string; initials: string }) {
+  if (logoUrl) {
+    return (
+      <div className="brand-badge has-logo">
+        <img src={logoUrl} />
+      </div>
+    );
+  }
+  return (
+    <div className="brand-badge">
+      <span>{initials}</span>
+    </div>
+  );
+}
+
+function EndLogo({ logoUrl, initials }: { logoUrl?: string; initials: string }) {
+  if (logoUrl) {
+    return (
+      <div className="end-logo has-logo">
+        <img src={logoUrl} />
+      </div>
+    );
+  }
+  return <div className="end-logo">{initials}</div>;
+}
+
 export function CouldaMadeFinanceVideo(input: VideoInput) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -187,7 +234,12 @@ export function CouldaMadeFinanceVideo(input: VideoInput) {
   const styleName = input.visualStyle ?? "terminal";
   const presetName = input.qualityPreset ?? "punchy";
   const brandColor = input.brandColor ?? input.accentColor;
+  const isGain = growth >= 1;
+  const resultColor = isGain ? "#28f296" : "#ff4d5d";
+  const resultSoftColor = isGain ? "#18b978" : "#a72a38";
+  const resultHotColor = isGain ? "#f2d766" : "#ffcf5a";
   const brandInitials = getBrandInitials(input.company, input.ticker);
+  const logoUrl = input.logoUrl?.trim() || undefined;
 
   const pulse = spring({ frame, fps, config: { damping: 18, stiffness: 80 } });
   const resultScale = spring({
@@ -198,8 +250,13 @@ export function CouldaMadeFinanceVideo(input: VideoInput) {
 
   return (
     <AbsoluteFill
-      className={`video-frame style-${styleName} preset-${presetName}`}
-      style={{ "--accent": input.accentColor, "--brand": brandColor } as React.CSSProperties}
+      className={`video-frame result-${isGain ? "gain" : "loss"} style-${styleName} preset-${presetName}`}
+      style={{
+        "--accent": resultColor,
+        "--accent-soft": resultSoftColor,
+        "--hot": resultHotColor,
+        "--brand": brandColor
+      } as React.CSSProperties}
     >
       {input.voiceoverAudioUrl && <Audio src={input.voiceoverAudioUrl} />}
       <AbsoluteFill
@@ -229,9 +286,7 @@ export function CouldaMadeFinanceVideo(input: VideoInput) {
           <div className="ticker">{input.ticker.toUpperCase()}</div>
           <div className="date">{startLabel} - TODAY</div>
         </div>
-        <div className="brand-badge">
-          <span>{brandInitials}</span>
-        </div>
+        <BrandMark logoUrl={logoUrl} initials={brandInitials} />
         <div
           className="hero-words"
           style={{
@@ -256,7 +311,7 @@ export function CouldaMadeFinanceVideo(input: VideoInput) {
           <div className="big-money">{amount}</div>
           <div className="company-lockup">
             <div className="eyebrow">into</div>
-            <div className="company">{input.company}</div>
+            <CompanyName company={input.company} />
             <div className="eyebrow">in {startLabel}</div>
           </div>
         </div>
@@ -326,7 +381,7 @@ export function CouldaMadeFinanceVideo(input: VideoInput) {
         className="scene-cta"
       >
         <div className="end-card">
-          <div className="end-logo">{brandInitials}</div>
+          <EndLogo logoUrl={logoUrl} initials={brandInitials} />
           <div className="brand">couldamade.com</div>
           <div className="cta-text">run yours now</div>
           <div className="end-meta">{input.ticker.toUpperCase()} / {value} / {growth.toFixed(1)}x</div>
