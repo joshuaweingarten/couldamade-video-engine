@@ -4,11 +4,11 @@ import { formatDate, formatDollar } from "./format";
 const TOTAL_FRAMES = 660;
 
 const ANGLE_HOOKS: Record<CreativeAngle, string> = {
-  regret: "You missed this",
-  receipt: "The receipt is painful",
-  shock: "$1K became how much?",
-  lesson: "The boring move won",
-  comeback: "Time did the heavy lifting"
+  regret: "You coulda made this",
+  receipt: "The math is brutal",
+  shock: "$1K quietly became this",
+  lesson: "Saving did the work",
+  comeback: "The chart was messy"
 };
 
 const STYLE_BY_ANGLE: Record<CreativeAngle, VisualStyle> = {
@@ -27,13 +27,8 @@ const PRESET_BY_ANGLE: Record<CreativeAngle, QualityPreset> = {
   comeback: "punchy"
 };
 
-const ACCENT_BY_STYLE: Record<VisualStyle, string> = {
-  terminal: "#28f296",
-  receipt: "#f2d766",
-  regret: "#ff4d5d",
-  clean: "#2f6df6",
-  newsroom: "#20c4ff"
-};
+const GAIN_COLOR = "#28f296";
+const LOSS_COLOR = "#ff4d5d";
 
 const KNOWN_BRAND_COLORS: Record<string, string> = {
   AAPL: "#a8b0b8",
@@ -44,6 +39,16 @@ const KNOWN_BRAND_COLORS: Record<string, string> = {
   MSFT: "#7fba00",
   NVDA: "#76b900",
   TSLA: "#e82127"
+};
+
+const KNOWN_LOGO_DOMAINS: Record<string, string> = {
+  AAPL: "apple.com",
+  AMZN: "amazon.com",
+  GOOGL: "google.com",
+  META: "meta.com",
+  MSFT: "microsoft.com",
+  NVDA: "nvidia.com",
+  TSLA: "tesla.com"
 };
 
 export function buildVideoIdeas(scenario: ScenarioInput): VideoInput[] {
@@ -60,6 +65,7 @@ export function buildVideoInput(scenario: ScenarioInput, angle: CreativeAngle): 
   const scenes = buildScenes({ scenario, angle, hook, amount, value, spokenMultiple, startLabel });
   const voiceover = scenes.map((scene) => scene.text).join(" ");
   const visualStyle = STYLE_BY_ANGLE[angle];
+  const resultColor = multiple >= 1 ? GAIN_COLOR : LOSS_COLOR;
 
   return {
     template: "couldamade-finance",
@@ -76,8 +82,9 @@ export function buildVideoInput(scenario: ScenarioInput, angle: CreativeAngle): 
     hook,
     voiceover,
     caption: buildCaption(scenario.company, scenario.ticker, amount, value, multiple, angle),
-    accentColor: ACCENT_BY_STYLE[visualStyle],
-    brandColor: KNOWN_BRAND_COLORS[scenario.ticker.toUpperCase()] ?? ACCENT_BY_STYLE[visualStyle],
+    accentColor: resultColor,
+    brandColor: KNOWN_BRAND_COLORS[scenario.ticker.toUpperCase()] ?? resultColor,
+    logoUrl: scenario.logoUrl?.trim() || getKnownLogoUrl(scenario.ticker),
     visualStyle,
     qualityPreset: PRESET_BY_ANGLE[angle],
     disclaimer: "Not financial advice. For education only.",
@@ -105,43 +112,43 @@ function buildScenes({
   const company = scenario.company;
   const linesByAngle: Record<CreativeAngle, string[]> = {
     regret: [
-      `${hook}: ${company} would have changed the math.`,
-      `Back in ${startLabel}, ${amount} was enough to start.`,
-      `Then you just held it.`,
-      `Today, that same position would be around ${value}.`,
-      `That is about ${spokenMultiple} times your money.`,
+      `Here is the CouldaMade check for ${company}.`,
+      `If ${amount} went in on ${startLabel},`,
+      "and you simply left it alone,",
+      `today it would be about ${value}.`,
+      `That is roughly ${spokenMultiple} times the original amount.`,
       "Run yours now at couldamade.com."
     ],
     receipt: [
-      `${hook}: ${company}, ${startLabel}.`,
-      `${amount} in. No trading. Just saving.`,
-      "Just one decision and patience.",
-      `The ending number is roughly ${value}.`,
-      `That is a ${spokenMultiple}x receipt.`,
+      `Here is the receipt for ${company}.`,
+      `${amount} saved into it on ${startLabel}.`,
+      "No extra moves. No prediction.",
+      `Just years of staying invested gets to about ${value}.`,
+      `That is roughly ${spokenMultiple}x your original money.`,
       "Check another one at couldamade.com."
     ],
     shock: [
-      `${hook} ${company}.`,
-      `If ${amount} went in during ${startLabel},`,
-      "and you did absolutely nothing,",
-      `it would be worth about ${value} today.`,
-      `${spokenMultiple}x is what saving over time can do.`,
+      `${company} is a wild what-if.`,
+      `${amount} saved back on ${startLabel}`,
+      `could be worth about ${value} now.`,
+      "Not because you traded it.",
+      "Because staying invested did the work.",
       "Run your what-if at couldamade.com."
     ],
     lesson: [
-      `${hook} with ${company}.`,
-      `${amount} invested in ${startLabel}.`,
-      "No perfect exit. No daily panic.",
-      `Just holding turns it into about ${value}.`,
-      `The lesson is the ${spokenMultiple}x gap.`,
+      `This is the quiet lesson from ${company}.`,
+      `${amount} saved on ${startLabel}.`,
+      "The hard part was leaving it alone.",
+      `The number now is about ${value}.`,
+      `That is around ${spokenMultiple}x over the years.`,
       "Try your own at couldamade.com."
     ],
     comeback: [
-      `${hook} for ${company}.`,
-      `${amount} back in ${startLabel}.`,
-      "The chart was never a straight line.",
-      `But the current value is about ${value}.`,
-      `That is roughly ${spokenMultiple} times back.`,
+      `${company} did not move in a straight line.`,
+      `${amount} saved on ${startLabel}.`,
+      "There were drops, noise, and boring stretches.",
+      `But staying invested gets you near ${value}.`,
+      `That is about ${spokenMultiple}x from patience.`,
       "Make your own at couldamade.com."
     ]
   };
@@ -190,16 +197,21 @@ function buildCaption(
   angle: CreativeAngle
 ): string {
   const prefixByAngle: Record<CreativeAngle, string> = {
-    regret: "The missed-opportunity math hurts.",
-    receipt: "Here is the receipt.",
-    shock: "This number surprised me.",
-    lesson: "The boring move won.",
-    comeback: "The line was messy, but steady saving mattered."
+    regret: "A simple what-if can look unreal in hindsight.",
+    receipt: "The receipt on one saved amount.",
+    shock: "A long-term what-if with a wild ending.",
+    lesson: "The quiet part is staying invested.",
+    comeback: "Messy chart, simple habit."
   };
 
-  return `${prefixByAngle[angle]} ${amount} in ${company} (${ticker.toUpperCase()}) would be about ${value} now, around ${multiple.toFixed(1)}x. Not financial advice.`;
+  return `${prefixByAngle[angle]} ${amount} in ${company} (${ticker.toUpperCase()}) would be about ${value} now, around ${multiple.toFixed(1)}x. For education only.`;
 }
 
 function formatSpokenMultiple(multiple: number): string {
   return Math.max(1, Math.round(multiple)).toLocaleString("en-US");
+}
+
+function getKnownLogoUrl(ticker: string): string | undefined {
+  const domain = KNOWN_LOGO_DOMAINS[ticker.toUpperCase()];
+  return domain ? `https://logo.clearbit.com/${domain}` : undefined;
 }
