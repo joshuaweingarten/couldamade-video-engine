@@ -2,6 +2,7 @@ import type { CreativeAngle, QualityPreset, ScenarioInput, ScriptScene, VideoInp
 import { formatDate, formatDollar } from "./format";
 
 const TOTAL_FRAMES = 660;
+const NARRATION_FRAMES = 560;
 
 const ANGLE_HOOKS: Record<CreativeAngle, string> = {
   regret: "You coulda made this",
@@ -63,7 +64,7 @@ export function buildVideoInput(scenario: ScenarioInput, angle: CreativeAngle): 
   const spokenMultiple = formatSpokenMultiple(multiple);
   const hook = ANGLE_HOOKS[angle];
   const scenes = buildScenes({ scenario, angle, hook, amount, value, spokenMultiple, startLabel });
-  const voiceover = scenes.map((scene) => scene.text).join(" ");
+  const voiceover = scenes.map((scene) => scene.text).join("\n\n");
   const visualStyle = STYLE_BY_ANGLE[angle];
   const resultColor = multiple >= 1 ? GAIN_COLOR : LOSS_COLOR;
 
@@ -160,24 +161,19 @@ function buildScenes({
 }
 
 function buildAdaptiveScenes(lines: string[]): ScriptScene[] {
-  const minFrames = [112, 106, 88, 126, 92, 72];
-  const weights = lines.map((line, index) => Math.max(minFrames[index], 54 + line.length * 1.6));
-  const totalWeight = weights.reduce((sum, value) => sum + value, 0);
-  const durations = weights.map((weight, index) => {
-    const frameCount = Math.round((weight / totalWeight) * TOTAL_FRAMES);
-    return Math.max(minFrames[index], frameCount);
-  });
-  while (durations.reduce((sum, value) => sum + value, 0) > TOTAL_FRAMES) {
-    const index = durations
-      .map((duration, durationIndex) => ({ duration, durationIndex, room: duration - minFrames[durationIndex] }))
-      .sort((a, b) => b.room - a.room)[0]?.durationIndex;
-    if (index === undefined || durations[index] <= minFrames[index]) break;
-    durations[index] -= 1;
+  const minFrames = [70, 66, 58, 76, 66, 52];
+  const durations = lines.map((line, index) => Math.max(minFrames[index], estimateSpokenFrames(line, index)));
+  const totalDuration = durations.reduce((sum, value) => sum + value, 0);
+  if (totalDuration > NARRATION_FRAMES) {
+    const scale = NARRATION_FRAMES / totalDuration;
+    durations.forEach((duration, index) => {
+      durations[index] = Math.max(minFrames[index], Math.round(duration * scale));
+    });
   }
 
   let cursor = 0;
   return lines.map((text, index) => {
-    const startFrame = Math.max(0, cursor - (index === 0 ? 0 : 10));
+    const startFrame = Math.max(0, cursor - (index === 0 ? 0 : 4));
     cursor += durations[index];
     const endFrame = index === lines.length - 1 ? TOTAL_FRAMES : cursor;
     return {
@@ -186,6 +182,13 @@ function buildAdaptiveScenes(lines: string[]): ScriptScene[] {
       endFrame
     };
   });
+}
+
+function estimateSpokenFrames(line: string, index: number): number {
+  const words = line.trim().split(/\s+/).filter(Boolean).length;
+  const punctuationPause = /[.!?]$/.test(line.trim()) ? 14 : 8;
+  const openingHold = index === 0 ? 10 : 0;
+  return Math.round(words * 11.5 + punctuationPause + openingHold);
 }
 
 function buildCaption(
