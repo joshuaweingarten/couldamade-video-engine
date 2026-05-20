@@ -8,6 +8,7 @@ import {
   useCurrentFrame,
   useVideoConfig
 } from "remotion";
+import { useState } from "react";
 import type React from "react";
 import type { VideoInput } from "../../shared/types";
 import { formatDate, formatDollar } from "../../shared/format";
@@ -186,11 +187,30 @@ function SpokenCaption({ text, opacity }: { text: string; opacity: number }) {
   );
 }
 
-function BrandMark({ logoUrl, initials }: { logoUrl?: string; initials: string }) {
-  if (logoUrl) {
+function TeslaLogo() {
+  return (
+    <svg className="tesla-logo" viewBox="0 0 100 100" role="img" aria-label="Tesla">
+      <path d="M16 24C35 10 65 10 84 24L77 33C61 24 39 24 23 33Z" />
+      <path d="M42 30H58L65 88H35Z" />
+      <path d="M29 40C42 35 58 35 71 40L65 49C56 45 44 45 35 49Z" />
+    </svg>
+  );
+}
+
+function LogoImage({ logoUrl, initials }: { logoUrl?: string; initials: string }) {
+  const [failed, setFailed] = useState(false);
+  if (logoUrl && !failed) {
+    return <img src={logoUrl} onError={() => setFailed(true)} />;
+  }
+  return <span>{initials}</span>;
+}
+
+function BrandMark({ logoUrl, initials, ticker }: { logoUrl?: string; initials: string; ticker: string }) {
+  const isTesla = ticker.toUpperCase() === "TSLA";
+  if (isTesla || logoUrl) {
     return (
-      <div className="brand-badge has-logo">
-        <img src={logoUrl} />
+      <div className={`brand-badge has-logo${isTesla ? " tesla-badge" : ""}`}>
+        {isTesla ? <TeslaLogo /> : <LogoImage logoUrl={logoUrl} initials={initials} />}
       </div>
     );
   }
@@ -201,11 +221,12 @@ function BrandMark({ logoUrl, initials }: { logoUrl?: string; initials: string }
   );
 }
 
-function EndLogo({ logoUrl, initials }: { logoUrl?: string; initials: string }) {
-  if (logoUrl) {
+function EndLogo({ logoUrl, initials, ticker }: { logoUrl?: string; initials: string; ticker: string }) {
+  const isTesla = ticker.toUpperCase() === "TSLA";
+  if (isTesla || logoUrl) {
     return (
-      <div className="end-logo has-logo">
-        <img src={logoUrl} />
+      <div className={`end-logo has-logo${isTesla ? " tesla-badge" : ""}`}>
+        {isTesla ? <TeslaLogo /> : <LogoImage logoUrl={logoUrl} initials={initials} />}
       </div>
     );
   }
@@ -286,7 +307,7 @@ export function CouldaMadeFinanceVideo(input: VideoInput) {
           <div className="ticker">{input.ticker.toUpperCase()}</div>
           <div className="date">{startLabel} - TODAY</div>
         </div>
-        <BrandMark logoUrl={logoUrl} initials={brandInitials} />
+        <BrandMark logoUrl={logoUrl} initials={brandInitials} ticker={input.ticker} />
         <div
           className="hero-words"
           style={{
@@ -381,7 +402,7 @@ export function CouldaMadeFinanceVideo(input: VideoInput) {
         className="scene-cta"
       >
         <div className="end-card">
-          <EndLogo logoUrl={logoUrl} initials={brandInitials} />
+          <EndLogo logoUrl={logoUrl} initials={brandInitials} ticker={input.ticker} />
           <div className="brand">couldamade.com</div>
           <div className="cta-text">run yours now</div>
           <div className="end-meta">{input.ticker.toUpperCase()} / {value} / {growth.toFixed(1)}x</div>
