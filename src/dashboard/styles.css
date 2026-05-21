@@ -305,6 +305,11 @@ textarea:focus {
   padding: 16px;
 }
 
+.idea-card.pro-idea {
+  border-color: rgba(255, 227, 102, 0.42);
+  background: linear-gradient(180deg, rgba(255, 227, 102, 0.08), var(--panel-2) 42%);
+}
+
 .idea-top,
 .job-main,
 .download-row {
@@ -373,6 +378,11 @@ textarea:focus {
 .status.rendering,
 .status.done {
   color: var(--accent);
+}
+
+.status.pro-status {
+  background: rgba(255, 227, 102, 0.16);
+  color: #ffe366;
 }
 
 .status.failed {
