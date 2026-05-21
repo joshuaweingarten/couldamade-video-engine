@@ -291,7 +291,18 @@
   margin-bottom: 36px;
 }
 
+.pro-cta-line {
+  color: #ffe366;
+  font-family: "Courier New", monospace;
+  font-size: 34px;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
 .pro-url {
+  margin-top: 18px;
   color: #f7fff9;
   font-size: 92px;
   line-height: 0.95;
