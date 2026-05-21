@@ -16,13 +16,15 @@ import { getBrandColor, getBrandIcon, getBrandLogoUrl } from "../../shared/brand
 import "./pro.css";
 
 const DEFAULT_SCENE_WINDOWS: Array<[number, number]> = [
-  [0, 54],
-  [48, 126],
-  [120, 245],
-  [236, 395],
-  [386, 555],
-  [546, 660]
+  [0, 82],
+  [74, 174],
+  [166, 318],
+  [306, 444],
+  [432, 590],
+  [580, 660]
 ];
+
+const HOLD_PHRASE_OFFSETS = [28, 68, 110];
 
 function sceneOpacity(frame: number, start: number, end: number): number {
   return interpolate(frame, [start - 6, start, end - 10, end], [0, 1, 1, 0], {
@@ -260,7 +262,7 @@ export function CouldaMadeProVideo(input: VideoInput) {
       <SceneLayer scene={scenes[2]} className="pro-scene pro-friction">
         <div className="pro-rule-stack">
           {["no trading", "no perfect timing", "just holding"].map((line, index) => (
-            <div key={line} className={frame > scenes[2].startFrame + index * 24 ? "visible" : ""}>
+            <div key={line} className={frame > scenes[2].startFrame + HOLD_PHRASE_OFFSETS[index] ? "visible" : ""}>
               {line}
             </div>
           ))}
