@@ -111,12 +111,12 @@ function BrandBadge({ logoUrl, initials, ticker }: { logoUrl?: string; initials:
 
 function MoneyRain({ amount, value, multiple }: { amount: string; value: string; multiple: string }) {
   const frame = useCurrentFrame();
-  const items = [amount, value, multiple, "HOLD", "TODAY", amount, value, multiple, "NO TRADING", "ONE DECISION"];
+  const items = [amount, value, multiple, "HOLD", "TODAY", "ONE DECISION"];
   return (
     <div className="pro-money-rain">
       {items.map((item, index) => {
         const seed = random(`pro-rain-${index}`);
-        const y = (frame * (1.4 + seed * 1.6) + index * 195) % 2050;
+        const y = (frame * (0.55 + seed * 0.7) + index * 310) % 2050;
         const x = 42 + seed * 960;
         return (
           <span
@@ -210,7 +210,6 @@ export function CouldaMadeProVideo(input: VideoInput) {
   const scenes = fallbackLines.map((line, index) => getScene(input, index, line));
   const activeScene = scenes.find((scene) => frame >= scene.startFrame && frame <= scene.endFrame);
   const captionOpacity = activeScene ? sceneOpacity(frame, activeScene.startFrame, activeScene.endFrame) : 0;
-  const cameraShake = frame < 60 ? Math.sin(frame * 1.7) * 6 : Math.sin(frame / 42) * 3;
   const revealSpring = spring({ frame: frame - scenes[3].startFrame, fps, config: { damping: 13, stiffness: 95 } });
   const stampSpring = spring({ frame: frame - scenes[4].startFrame, fps, config: { damping: 12, stiffness: 120 } });
 
@@ -220,8 +219,7 @@ export function CouldaMadeProVideo(input: VideoInput) {
       style={{
         "--result": resultColor,
         "--result-soft": resultSoftColor,
-        "--brand": brandColor,
-        transform: `translate(${cameraShake}px, ${-cameraShake * 0.55}px)`
+        "--brand": brandColor
       } as React.CSSProperties}
     >
       {input.voiceoverAudioUrl && <Audio src={input.voiceoverAudioUrl} />}
