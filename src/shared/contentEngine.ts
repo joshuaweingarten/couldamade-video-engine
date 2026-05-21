@@ -29,13 +29,14 @@ export function buildVideoIdeas(scenario: ScenarioInput): VideoInput[] {
 }
 
 export function buildProVideoInput(scenario: ScenarioInput): VideoInput {
+  const company = shortCompanyName(scenario.company);
   const amount = formatDollar(scenario.amount);
   const value = formatDollar(scenario.value);
   const multiple = scenario.value / scenario.amount;
   const multipleLabel = formatMultiple(multiple);
   const resultColor = multiple >= 1 ? GAIN_COLOR : LOSS_COLOR;
-  const hook = `${amount} in ${scenario.company} did something stupid.`;
-  const scenes = buildProScenes({ scenario, amount, value, multipleLabel });
+  const hook = `${amount} in ${company} did something stupid.`;
+  const scenes = buildProScenes({ scenario, company, amount, value, multipleLabel });
   const voiceover = scenes.map((scene) => scene.text).join("\n\n");
 
   return {
@@ -52,7 +53,7 @@ export function buildProVideoInput(scenario: ScenarioInput): VideoInput {
     angle: "shock",
     hook,
     voiceover,
-    caption: `${amount} in ${scenario.company} (${scenario.ticker.toUpperCase()}) in ${scenario.year} would be about ${value} today. That is ${multipleLabel} your money. Run yours at couldamade.com. For education only.`,
+    caption: `${amount} in ${company} (${scenario.ticker.toUpperCase()}) in ${scenario.year} would be about ${value} today. That is ${multipleLabel} your money. Run yours at couldamade.com. For education only.`,
     accentColor: resultColor,
     brandColor: getBrandColor(scenario.ticker) ?? resultColor,
     logoUrl: scenario.logoUrl?.trim() || getBrandLogoUrl(scenario.ticker),
@@ -167,18 +168,20 @@ function buildScenes({
 
 function buildProScenes({
   scenario,
+  company,
   amount,
   value,
   multipleLabel
 }: {
   scenario: ScenarioInput;
+  company: string;
   amount: string;
   value: string;
   multipleLabel: string;
 }): ScriptScene[] {
   const lines = [
-    `${amount} in ${scenario.company} did something stupid.`,
-    `If you had invested it in ${scenario.company} in ${scenario.year},`,
+    `${amount} in ${company} did something stupid.`,
+    `If you had invested it in ${company} in ${scenario.year},`,
     "No trading. No perfect timing. Just holding.",
     `It would be about ${value} today.`,
     `That is ${multipleLabel} your money from one boring decision.`,
@@ -199,6 +202,13 @@ function buildProScenes({
     endFrame: windows[index][1],
     emphasis: text.includes(value) ? value : text.includes(multipleLabel) ? multipleLabel : text.includes(amount) ? amount : undefined
   }));
+}
+
+function shortCompanyName(company: string): string {
+  return company
+    .replace(/\b(incorporated|inc\.?|corporation|corp\.?|company|co\.?|group|holdings?)\b/gi, "")
+    .replace(/\s+/g, " ")
+    .trim() || company;
 }
 
 function buildAdaptiveScenes(lines: string[]): ScriptScene[] {
