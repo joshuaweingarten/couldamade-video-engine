@@ -1,0 +1,343 @@
+.pro-frame {
+  position: relative;
+  overflow: hidden;
+  background: #020604;
+  color: #f7fff9;
+  font-family: Inter, Arial, Helvetica, sans-serif;
+  letter-spacing: 0;
+}
+
+.pro-world,
+.pro-grid,
+.pro-vignette,
+.pro-scanlines,
+.pro-color-wash {
+  position: absolute;
+  inset: 0;
+}
+
+.pro-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px);
+  background-size: 92px 92px;
+  opacity: 0.56;
+}
+
+.pro-color-wash {
+  background:
+    radial-gradient(circle at 52% 48%, color-mix(in srgb, var(--result) 24%, transparent), transparent 40%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.15), color-mix(in srgb, var(--result-soft) 28%, transparent));
+  mix-blend-mode: screen;
+}
+
+.pro-vignette {
+  box-shadow: inset 0 0 210px rgba(0, 0, 0, 0.92), inset 0 0 35px rgba(0, 0, 0, 0.75);
+}
+
+.pro-scanlines {
+  opacity: 0.19;
+  background: repeating-linear-gradient(180deg, transparent 0, transparent 5px, rgba(255, 255, 255, 0.12) 6px);
+  mix-blend-mode: overlay;
+}
+
+.pro-chart {
+  position: absolute;
+  inset: -80px -60px;
+  width: 1200px;
+  height: 2100px;
+  opacity: 0.92;
+  filter: drop-shadow(0 0 28px color-mix(in srgb, var(--result) 80%, transparent));
+}
+
+.pro-chart path {
+  fill: none;
+  stroke: var(--result);
+  stroke-width: 42px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pro-money-rain {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.pro-money-rain span {
+  position: absolute;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.58);
+  font-family: "Courier New", monospace;
+  font-size: 43px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.pro-topbar {
+  position: absolute;
+  z-index: 8;
+  top: 58px;
+  left: 66px;
+  right: 66px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  color: rgba(255, 255, 255, 0.74);
+  font-family: "Courier New", monospace;
+  font-size: 28px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.pro-topbar strong {
+  display: block;
+  color: var(--result);
+  font-size: 58px;
+  line-height: 0.92;
+  text-shadow: 0 0 22px color-mix(in srgb, var(--result) 70%, transparent);
+}
+
+.pro-topbar span {
+  display: block;
+  max-width: 440px;
+  margin-top: 8px;
+  color: rgba(255, 255, 255, 0.48);
+  font-size: 22px;
+}
+
+.pro-brand-badge {
+  position: absolute;
+  z-index: 10;
+  top: 153px;
+  left: 70px;
+  width: 126px;
+  height: 126px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.94);
+  color: #101010;
+  font-size: 42px;
+  font-weight: 900;
+  box-shadow: 0 0 34px color-mix(in srgb, var(--brand) 46%, transparent), 0 18px 48px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.pro-brand-badge.has-logo img,
+.pro-brand-icon-svg {
+  width: 78px;
+  height: 78px;
+  object-fit: contain;
+}
+
+.pro-scene {
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.pro-word {
+  display: inline-block;
+  white-space: nowrap;
+  margin: 0 0.16em;
+}
+
+.pro-kicker,
+.pro-label,
+.pro-date,
+.pro-subline,
+.pro-meaning-line,
+.pro-boring {
+  font-family: "Courier New", monospace;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.pro-kicker {
+  position: absolute;
+  top: 390px;
+  left: 0;
+  right: 0;
+  color: var(--result);
+  font-size: 37px;
+  text-shadow: 0 0 22px color-mix(in srgb, var(--result) 80%, transparent);
+}
+
+.pro-hook-copy {
+  width: 920px;
+  margin-top: 40px;
+  font-size: 118px;
+  line-height: 0.96;
+  font-weight: 950;
+  text-transform: uppercase;
+  text-wrap: balance;
+  text-shadow: 0 12px 0 rgba(0, 0, 0, 0.48), 0 0 26px rgba(255, 255, 255, 0.2);
+}
+
+.pro-setup,
+.pro-reveal,
+.pro-meaning {
+  flex-direction: column;
+}
+
+.pro-label {
+  font-size: 44px;
+  margin-bottom: 12px;
+}
+
+.pro-amount {
+  color: var(--result);
+  font-size: 176px;
+  line-height: 0.9;
+  font-weight: 950;
+  text-shadow: 0 0 34px color-mix(in srgb, var(--result) 66%, transparent);
+}
+
+.pro-company {
+  width: 980px;
+  margin-top: 42px;
+  font-size: var(--company-size);
+  line-height: 0.92;
+  font-weight: 900;
+  text-transform: uppercase;
+  text-shadow: 0 10px 0 rgba(0, 0, 0, 0.5);
+}
+
+.pro-date {
+  margin-top: 36px;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 40px;
+}
+
+.pro-rule-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 34px;
+  width: 900px;
+}
+
+.pro-rule-stack div {
+  opacity: 0.18;
+  transform: translateX(-40px);
+  color: #f8fff9;
+  border: 4px solid rgba(255, 255, 255, 0.62);
+  background: rgba(0, 0, 0, 0.54);
+  padding: 28px 36px 22px;
+  font-size: 89px;
+  line-height: 0.9;
+  font-weight: 950;
+  text-transform: uppercase;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.pro-rule-stack div.visible {
+  opacity: 1;
+  transform: translateX(0) rotate(-1deg);
+}
+
+.pro-value {
+  color: var(--result);
+  font-size: 238px;
+  line-height: 0.88;
+  font-weight: 950;
+  text-shadow: 0 0 44px color-mix(in srgb, var(--result) 72%, transparent), 0 16px 0 rgba(0, 0, 0, 0.46);
+}
+
+.pro-subline {
+  margin-top: 30px;
+  color: #ffe366;
+  font-size: 43px;
+}
+
+.pro-meaning-line {
+  font-size: 78px;
+  line-height: 0.95;
+}
+
+.pro-stamp {
+  margin: 28px 0;
+  padding: 28px 42px 18px;
+  border: 7px solid #ffe366;
+  color: #ffe366;
+  font-size: 205px;
+  line-height: 0.8;
+  font-weight: 950;
+  text-transform: uppercase;
+  box-shadow: 0 0 30px rgba(255, 227, 102, 0.22);
+}
+
+.pro-boring {
+  margin-top: 20px;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 42px;
+}
+
+.pro-end-card {
+  position: relative;
+  width: 900px;
+  min-height: 470px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 5px solid rgba(255, 255, 255, 0.22);
+  background: rgba(0, 0, 0, 0.52);
+  box-shadow: 0 0 46px color-mix(in srgb, var(--result) 26%, transparent);
+}
+
+.pro-end-card .pro-brand-badge {
+  position: static;
+  margin-bottom: 36px;
+}
+
+.pro-url {
+  color: #f7fff9;
+  font-size: 92px;
+  line-height: 0.95;
+  font-weight: 950;
+  text-transform: lowercase;
+}
+
+.pro-end-meta {
+  margin-top: 34px;
+  color: rgba(255, 255, 255, 0.66);
+  font-family: "Courier New", monospace;
+  font-size: 30px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.pro-caption {
+  position: absolute;
+  z-index: 12;
+  left: 70px;
+  right: 70px;
+  bottom: 190px;
+  padding: 24px 28px 20px;
+  background: rgba(0, 0, 0, 0.68);
+  border-left: 8px solid var(--result);
+  color: rgba(255, 255, 255, 0.88);
+  font-family: "Courier New", monospace;
+  font-size: 36px;
+  font-weight: 900;
+  line-height: 1.12;
+  text-align: left;
+  text-transform: uppercase;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+.pro-disclaimer {
+  position: absolute;
+  z-index: 12;
+  left: 64px;
+  right: 64px;
+  bottom: 54px;
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 23px;
+  font-weight: 700;
+  text-align: center;
+}
