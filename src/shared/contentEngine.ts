@@ -3,7 +3,7 @@ import { formatDate, formatDollar, formatMultiple } from "./format";
 import { getBrandColor, getBrandLogoUrl } from "./brandIconDatabase";
 
 const TOTAL_FRAMES = 660;
-const NARRATION_FRAMES = 560;
+const NARRATION_FRAMES = 520;
 
 const STYLE_BY_ANGLE: Record<CreativeAngle, VisualStyle> = {
   regret: "regret",
@@ -188,12 +188,12 @@ function buildProScenes({
     "See what you could have made at couldamade.com."
   ];
   const windows: Array<[number, number]> = [
-    [0, 82],
-    [74, 174],
-    [166, 318],
-    [306, 444],
-    [432, 590],
-    [580, TOTAL_FRAMES]
+    [0, 70],
+    [58, 145],
+    [132, 250],
+    [238, 350],
+    [338, 475],
+    [462, TOTAL_FRAMES]
   ];
 
   return lines.map((text, index) => ({
