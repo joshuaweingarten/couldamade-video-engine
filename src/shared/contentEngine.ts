@@ -1,5 +1,5 @@
 import type { CreativeAngle, QualityPreset, ScenarioInput, ScriptScene, VideoInput, VisualStyle } from "./types";
-import { formatDate, formatDollar } from "./format";
+import { formatDate, formatDollar, formatMultiple } from "./format";
 import { getBrandColor, getBrandLogoUrl } from "./brandIconDatabase";
 
 const TOTAL_FRAMES = 660;
@@ -33,9 +33,9 @@ export function buildVideoInput(scenario: ScenarioInput, angle: CreativeAngle): 
   const amount = formatDollar(scenario.amount);
   const value = formatDollar(scenario.value);
   const multiple = scenario.value / scenario.amount;
-  const spokenMultiple = formatSpokenMultiple(multiple);
+  const multipleLabel = formatMultiple(multiple);
   const hook = buildOpeningHook(scenario.company, amount, scenario.year);
-  const scenes = buildScenes({ scenario, angle, amount, value, spokenMultiple, startLabel });
+  const scenes = buildScenes({ scenario, angle, amount, value, multipleLabel, startLabel });
   const voiceover = scenes.map((scene) => scene.text).join("\n\n");
   const visualStyle = STYLE_BY_ANGLE[angle];
   const resultColor = multiple >= 1 ? GAIN_COLOR : LOSS_COLOR;
@@ -70,14 +70,14 @@ function buildScenes({
   angle,
   amount,
   value,
-  spokenMultiple,
+  multipleLabel,
   startLabel
 }: {
   scenario: ScenarioInput;
   angle: CreativeAngle;
   amount: string;
   value: string;
-  spokenMultiple: string;
+  multipleLabel: string;
   startLabel: string;
 }): ScriptScene[] {
   const company = scenario.company;
@@ -87,7 +87,7 @@ function buildScenes({
       openingHook,
       "No perfect timing. No extra deposits.",
       `today it would be about ${value}.`,
-      `That is roughly ${spokenMultiple} times the original amount.`,
+      `That is roughly ${multipleLabel} the original amount.`,
       "Run yours now at couldamade.com."
     ],
     receipt: [
@@ -95,7 +95,7 @@ function buildScenes({
       `The buy date was ${startLabel}.`,
       "Then the only move was staying invested.",
       `Just years of staying invested gets to about ${value}.`,
-      `That is roughly ${spokenMultiple}x your original money.`,
+      `That is roughly ${multipleLabel} your original money.`,
       "Check another one at couldamade.com."
     ],
     shock: [
@@ -111,7 +111,7 @@ function buildScenes({
       "The lesson is painfully simple.",
       "Saving early gave the money room to work.",
       `The number now is about ${value}.`,
-      `That is around ${spokenMultiple}x over the years.`,
+      `That is around ${multipleLabel} over the years.`,
       "Try your own at couldamade.com."
     ],
     comeback: [
@@ -119,14 +119,14 @@ function buildScenes({
       `${company} did not move in a straight line.`,
       "There were drops, noise, and boring stretches.",
       `But staying invested gets you near ${value}.`,
-      `That is about ${spokenMultiple}x from patience.`,
+      `That is about ${multipleLabel} from patience.`,
       "Make your own at couldamade.com."
     ]
   };
 
-  return buildAdaptiveScenes(linesByAngle[angle]).map((scene, index) => ({
+  return buildAdaptiveScenes(linesByAngle[angle]).map((scene) => ({
     ...scene,
-    emphasis: index === 3 ? value : undefined
+    emphasis: scene.text.includes(value) ? value : scene.text.includes(multipleLabel) ? multipleLabel : undefined
   }));
 }
 
@@ -181,9 +181,5 @@ function buildCaption(
     comeback: "Messy chart, simple habit."
   };
 
-  return `${prefixByAngle[angle]} ${amount} in ${company} (${ticker.toUpperCase()}) would be about ${value} now, around ${multiple.toFixed(1)}x. For education only.`;
-}
-
-function formatSpokenMultiple(multiple: number): string {
-  return Math.max(1, Math.round(multiple)).toLocaleString("en-US");
+  return `${prefixByAngle[angle]} ${amount} in ${company} (${ticker.toUpperCase()}) would be about ${value} now, around ${formatMultiple(multiple)}. For education only.`;
 }
