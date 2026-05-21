@@ -400,8 +400,8 @@ export function CouldaMadeFinanceVideo(input: VideoInput) {
       >
         <div className="end-card">
           <EndLogo logoUrl={logoUrl} initials={brandInitials} ticker={input.ticker} />
+          <div className="cta-text">see what you could have made</div>
           <div className="brand">couldamade.com</div>
-          <div className="cta-text">run yours now</div>
           <div className="end-meta">{input.ticker.toUpperCase()} / {value} / {multipleLabel}</div>
         </div>
       </SceneShell>
