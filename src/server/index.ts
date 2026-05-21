@@ -11,7 +11,7 @@ import {
 } from "../shared/types";
 import { buildVideoIdeas } from "../shared/contentEngine";
 import { enqueueRender } from "./queue";
-import { getJob, listJobs, loadJobs } from "./jobStore";
+import { clearFailedJobs, failInterruptedJobs, failStaleJobs, getJob, listJobs, loadJobs } from "./jobStore";
 import {
   createContentItem,
   createSavedVideo,
@@ -35,6 +35,7 @@ const NARRATION_STYLE_PROMPT =
   "and no friendly customer-service tone. Do not add any words, commentary, or filler not present in the script.";
 
 await loadJobs();
+await failInterruptedJobs();
 await loadAppData();
 
 const app = express();
@@ -50,7 +51,8 @@ app.get("/api/healthz", (_req, res) => {
   res.json({ ok: true, service: "couldamade-video-engine" });
 });
 
-app.get("/api/jobs", (_req, res) => {
+app.get("/api/jobs", async (_req, res) => {
+  await failStaleJobs();
   res.json({ jobs: listJobs() });
 });
 
@@ -61,6 +63,12 @@ app.get("/api/jobs/:id", (req, res) => {
     return;
   }
   res.json({ job });
+});
+
+app.post("/api/jobs/cleanup", async (_req, res) => {
+  const markedStuck = await failStaleJobs();
+  const cleared = await clearFailedJobs();
+  res.json({ ok: true, markedStuck, cleared, jobs: listJobs() });
 });
 
 app.post("/api/render", async (req, res) => {
