@@ -25,6 +25,10 @@ const angleOptions: Array<{ value: CreativeAngle; label: string }> = [
   { value: "comeback", label: "Comeback" }
 ];
 
+function getIdeaLabel(idea: VideoInput): string {
+  return idea.template === "couldamade-pro" ? "Pro template" : idea.angle;
+}
+
 type ExternalScenario = {
   asset: string;
   ticker?: string;
@@ -377,10 +381,10 @@ function App() {
           </div>
 
           <div className="idea-list">
-            {ideas.map((idea) => (
-              <article className="idea-card" key={`${idea.ticker}-${idea.angle}`}>
+            {ideas.map((idea, index) => (
+              <article className={idea.template === "couldamade-pro" ? "idea-card pro-idea" : "idea-card"} key={`${idea.template}-${idea.ticker}-${idea.angle}-${index}`}>
                 <div className="idea-top">
-                  <span className="status done">{idea.angle}</span>
+                  <span className={idea.template === "couldamade-pro" ? "status pro-status" : "status done"}>{getIdeaLabel(idea)}</span>
                   <button className="icon-button compact" type="button" onClick={() => queueOne(idea)} aria-label="Queue video">
                     <Send size={18} />
                   </button>
@@ -422,72 +426,14 @@ function App() {
               ))}
             </div>
           )}
-          {jobs.length === 0 ? (
-            <div className="empty">
-              <Play size={26} />
-              <p>No renders yet. Generate ideas, then queue one.</p>
-            </div>
-          ) : (
-            jobs.map((job) => <JobCard key={job.id} job={job} />)
-          )}
-        </div>
-      </section>
-    </main>
-  );
-}
 
-function Stat({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="stat">
-      <strong>{value}</strong>
-      <span>{label}</span>
-    </div>
-  );
-}
-
-function JobCard({ job }: { job: RenderJob }) {
-  const title = `${job.input.ticker.toUpperCase()} / ${job.input.company}`;
-  return (
-    <article className="job-card">
-      <div className="job-main">
-        <div>
-          <h3>{title}</h3>
-          <p>{job.input.angle} - {new Date(job.createdAt).toLocaleString()}</p>
-        </div>
-        <span className={`status ${job.status}`}>{job.status}</span>
-      </div>
-      <div className="progress-track">
-        <div className="progress-fill" style={{ width: `${Math.round(job.progress * 100)}%` }} />
-      </div>
-      {job.error && <p className="error">{job.error}</p>}
-      {job.outputUrl && (
-        <div className="download-row">
-          <a className="download-link" href={job.outputUrl} download>
-            <Download size={18} />
-            MP4
-          </a>
-          {job.captionUrl && (
-            <a className="download-link" href={job.captionUrl} download>
-              <FileText size={18} />
-              SRT
-            </a>
-          )}
-          {job.metadataUrl && (
-            <a className="download-link" href={job.metadataUrl} download>
-              <FileText size={18} />
-              JSON
-            </a>
-          )}
-        </div>
-      )}
-    </article>
-  );
-}
-
-createRoot(document.getElementById("root")!).render(<App />);
-
-function cleanCompanyName(raw: string): string {
-  return raw
-    .replace(/,?\s+(Inc\.?|Corp\.?|Corporation|Ltd\.?|Limited|LLC|L\.L\.C\.|PLC|S\.A\.|N\.V\.|Holdings?|Group|Co\.?)$/i, "")
-    .trim();
-}
+          {jobs.length === 0 && <EmptyState />}
+          {jobs.map((job) => (
+            <article className="job-card" key={job.id}>
+              <div className="job-main">
+                <div>
+                  <h3>{job.input.ticker} / {job.input.company}</h3>
+                  <p>{job.input.angle} - {new Date(job.createdAt).toLocaleString()}</p>
+                </div>
+                <span className={`status ${job.status}`}>{job.status}</span>
+              </div>
