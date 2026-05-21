@@ -11,7 +11,7 @@ import {
 import { useState } from "react";
 import type React from "react";
 import type { VideoInput } from "../../shared/types";
-import { formatDate, formatDollar } from "../../shared/format";
+import { formatDate, formatDollar, formatMultiple } from "../../shared/format";
 import { getBrandColor, getBrandIcon, getBrandLogoUrl } from "../../shared/brandIconDatabase";
 import "./video.css";
 
@@ -28,15 +28,6 @@ function sceneProgress(frame: number, start: number, end: number): number {
     extrapolateRight: "clamp",
     easing: Easing.inOut(Easing.cubic)
   });
-}
-
-function countUpValue(frame: number, startFrame: number, endFrame: number, amount: number): number {
-  const p = interpolate(frame, [startFrame, endFrame], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-    easing: Easing.out(Easing.cubic)
-  });
-  return amount * p;
 }
 
 function currencyGrowthPath(frame: number, startFrame: number): string {
@@ -127,7 +118,7 @@ function SceneShell({
   );
 }
 
-function MarketTape({ ticker, company, value }: { ticker: string; company: string; value: string }) {
+function MarketTape({ ticker, company, value, multiple }: { ticker: string; company: string; value: string; multiple: string }) {
   const frame = useCurrentFrame();
   const rows = [0, 1, 2];
   return (
@@ -140,7 +131,7 @@ function MarketTape({ ticker, company, value }: { ticker: string; company: strin
         >
           {Array.from({ length: 8 }).map((_, index) => (
             <span key={index}>
-              {ticker.toUpperCase()} {company} {value} +{(12 + row * 7 + index * 3).toFixed(1)}%
+              {ticker.toUpperCase()} {company} {value} {multiple}
             </span>
           ))}
         </div>
@@ -149,9 +140,9 @@ function MarketTape({ ticker, company, value }: { ticker: string; company: strin
   );
 }
 
-function FloatingNumbers({ amount, value }: { amount: string; value: string }) {
+function FloatingNumbers({ amount, value, multiple }: { amount: string; value: string; multiple: string }) {
   const frame = useCurrentFrame();
-  const items = [amount, "+18%", value, "HOLD", "+42%", "TIME", "+7.8x", "TODAY"];
+  const items = [amount, value, multiple, "HOLD", amount, value, multiple, "TODAY"];
   return (
     <div className="floating-numbers">
       {items.map((item, index) => {
@@ -254,13 +245,13 @@ export function CouldaMadeFinanceVideo(input: VideoInput) {
   const scene3 = getScene(input, 3, [340, 500]);
   const scene4 = getScene(input, 4, [490, 610]);
   const scene5 = getScene(input, 5, [600, 660]);
-  const countedValue = formatDollar(countUpValue(frame, scene3.startFrame + 10, scene3.startFrame + 105, input.value));
   const cameraX = Math.sin(frame / 58) * 18;
   const cameraY = Math.cos(frame / 72) * 24;
   const cameraScale = 1.03 + Math.sin(frame / 115) * 0.018;
   const styleName = input.visualStyle ?? "terminal";
   const presetName = input.qualityPreset ?? "punchy";
   const brandColor = getBrandColor(input.ticker) ?? input.brandColor ?? input.accentColor;
+  const multipleLabel = formatMultiple(growth);
   const isGain = growth >= 1;
   const resultColor = isGain ? "#28f296" : "#ff4d5d";
   const resultSoftColor = isGain ? "#18b978" : "#a72a38";
@@ -291,8 +282,8 @@ export function CouldaMadeFinanceVideo(input: VideoInput) {
         style={{ transform: `translate(${cameraX}px, ${cameraY}px) scale(${cameraScale})` }}
       >
         <div className="grid-bg" />
-        <MarketTape ticker={input.ticker} company={input.company} value={value} />
-        <FloatingNumbers amount={amount} value={value} />
+        <MarketTape ticker={input.ticker} company={input.company} value={value} multiple={multipleLabel} />
+        <FloatingNumbers amount={amount} value={value} multiple={multipleLabel} />
         <svg className="chart-line" viewBox="0 0 1080 1920">
           <path d={currencyGrowthPath(frame, 10)} />
         </svg>
@@ -324,7 +315,7 @@ export function CouldaMadeFinanceVideo(input: VideoInput) {
         </div>
         <div className="side-card">
           <span>what-if check</span>
-          <strong>{growth.toFixed(1)}x</strong>
+          <strong>{multipleLabel}</strong>
         </div>
       </SceneShell>
 
@@ -379,9 +370,9 @@ export function CouldaMadeFinanceVideo(input: VideoInput) {
             className="result-money"
             style={{ transform: `scale(${0.85 + resultScale * 0.15})` }}
           >
-            {frame < scene3.startFrame + 105 ? countedValue : value}
+            {value}
           </div>
-          <div className="gain-pill">about {growth.toFixed(1)}x your money</div>
+          <div className="gain-pill">about {multipleLabel} your money</div>
           <div className="eyebrow">today</div>
         </div>
         <div className="burst-ring" />
@@ -398,7 +389,7 @@ export function CouldaMadeFinanceVideo(input: VideoInput) {
         </div>
         <div className="split-comparison">
           <div><span>trading</span><strong>noise</strong></div>
-          <div><span>holding</span><strong>{growth.toFixed(1)}x</strong></div>
+          <div><span>holding</span><strong>{multipleLabel}</strong></div>
         </div>
       </SceneShell>
 
@@ -411,7 +402,7 @@ export function CouldaMadeFinanceVideo(input: VideoInput) {
           <EndLogo logoUrl={logoUrl} initials={brandInitials} ticker={input.ticker} />
           <div className="brand">couldamade.com</div>
           <div className="cta-text">run yours now</div>
-          <div className="end-meta">{input.ticker.toUpperCase()} / {value} / {growth.toFixed(1)}x</div>
+          <div className="end-meta">{input.ticker.toUpperCase()} / {value} / {multipleLabel}</div>
         </div>
       </SceneShell>
 
