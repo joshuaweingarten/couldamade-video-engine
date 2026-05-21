@@ -36,6 +36,7 @@ type ExternalScenario = {
   startDate?: string;
   amountInvested: number;
   finalValue: number;
+  dataSource?: string;
   logoUrl?: string;
 };
 
@@ -93,6 +94,18 @@ function App() {
     const id = window.setInterval(refreshJobs, activeJob ? 1500 : 5000);
     return () => window.clearInterval(id);
   }, [activeJob?.id]);
+
+  useEffect(() => {
+    const ticker = scenario.ticker.trim();
+    if (ticker.length < 1) {
+      setAssetResults([]);
+      return;
+    }
+    const id = window.setTimeout(() => {
+      void searchCouldaMadeAssets(ticker, false);
+    }, 250);
+    return () => window.clearTimeout(id);
+  }, [scenario.ticker]);
 
   async function generateIdeas(nextScenario = scenario) {
     setBusy(true);
@@ -199,8 +212,11 @@ function App() {
       });
       const res = await fetch(`/api/external/calculate?${qs}`, { headers: { Accept: "application/json" } });
       if (!res.ok) throw new Error(await res.text());
-      applyExternalScenario((await res.json()) as ExternalScenario);
-      setLookupMessage("Pulled live calculation from CouldaMade.com.");
+      const external = (await res.json()) as ExternalScenario;
+      applyExternalScenario(external);
+      setLookupMessage(external.dataSource?.includes("fallback")
+        ? "Calculated with backup stock data because CouldaMade/Yahoo was rate-limited."
+        : "Pulled live calculation from CouldaMade.com.");
     } catch (error) {
       setLookupMessage(error instanceof Error ? error.message : "CouldaMade lookup failed.");
     } finally {
@@ -223,11 +239,19 @@ function App() {
     }
   }
 
-  async function searchCouldaMadeAssets() {
-    if (!scenario.ticker.trim()) return;
-    const res = await fetch(`/api/external/search?q=${encodeURIComponent(scenario.ticker)}`);
-    if (!res.ok) return;
-    setAssetResults((await res.json()) as CouldaMadeAsset[]);
+  async function searchCouldaMadeAssets(query = scenario.ticker, showMessage = true) {
+    const q = query.trim();
+    if (!q) return;
+    if (showMessage) setLookupMessage("Searching assets...");
+    try {
+      const res = await fetch(`/api/external/search?q=${encodeURIComponent(q)}`);
+      if (!res.ok) throw new Error(await res.text());
+      const results = (await res.json()) as CouldaMadeAsset[];
+      setAssetResults(results);
+      if (showMessage) setLookupMessage(results.length ? "Choose a company below." : "No matching companies found.");
+    } catch (error) {
+      if (showMessage) setLookupMessage(error instanceof Error ? error.message : "Asset search failed.");
+    }
   }
 
   function useAsset(asset: CouldaMadeAsset) {
@@ -299,7 +323,7 @@ function App() {
               Ticker
               <div className="input-action">
                 <input value={scenario.ticker} onChange={(e) => update("ticker", e.target.value.toUpperCase())} />
-                <button className="icon-button compact" type="button" onClick={searchCouldaMadeAssets} aria-label="Search CouldaMade assets">
+                <button className="icon-button compact" type="button" onClick={() => searchCouldaMadeAssets()} aria-label="Search CouldaMade assets">
                   <Search size={17} />
                 </button>
               </div>
