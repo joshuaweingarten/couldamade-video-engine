@@ -1,16 +1,9 @@
 import type { CreativeAngle, QualityPreset, ScenarioInput, ScriptScene, VideoInput, VisualStyle } from "./types";
 import { formatDate, formatDollar } from "./format";
+import { getBrandColor, getBrandLogoUrl } from "./brandIconDatabase";
 
 const TOTAL_FRAMES = 660;
 const NARRATION_FRAMES = 560;
-
-const ANGLE_HOOKS: Record<CreativeAngle, string> = {
-  regret: "You coulda made this",
-  receipt: "The math is brutal",
-  shock: "$1K quietly became this",
-  lesson: "Saving did the work",
-  comeback: "The chart was messy"
-};
 
 const STYLE_BY_ANGLE: Record<CreativeAngle, VisualStyle> = {
   regret: "regret",
@@ -31,27 +24,6 @@ const PRESET_BY_ANGLE: Record<CreativeAngle, QualityPreset> = {
 const GAIN_COLOR = "#28f296";
 const LOSS_COLOR = "#ff4d5d";
 
-const KNOWN_BRAND_COLORS: Record<string, string> = {
-  AAPL: "#a8b0b8",
-  AMZN: "#ff9900",
-  BTC: "#f7931a",
-  GOOGL: "#4285f4",
-  META: "#0866ff",
-  MSFT: "#7fba00",
-  NVDA: "#76b900",
-  TSLA: "#e82127"
-};
-
-const KNOWN_LOGO_DOMAINS: Record<string, string> = {
-  AAPL: "apple.com",
-  AMZN: "amazon.com",
-  GOOGL: "google.com",
-  META: "meta.com",
-  MSFT: "microsoft.com",
-  NVDA: "nvidia.com",
-  TSLA: "tesla.com"
-};
-
 export function buildVideoIdeas(scenario: ScenarioInput): VideoInput[] {
   return scenario.angles.map((angle) => buildVideoInput(scenario, angle));
 }
@@ -62,8 +34,8 @@ export function buildVideoInput(scenario: ScenarioInput, angle: CreativeAngle): 
   const value = formatDollar(scenario.value);
   const multiple = scenario.value / scenario.amount;
   const spokenMultiple = formatSpokenMultiple(multiple);
-  const hook = ANGLE_HOOKS[angle];
-  const scenes = buildScenes({ scenario, angle, hook, amount, value, spokenMultiple, startLabel });
+  const hook = buildOpeningHook(scenario.company, amount, scenario.year);
+  const scenes = buildScenes({ scenario, angle, amount, value, spokenMultiple, startLabel });
   const voiceover = scenes.map((scene) => scene.text).join("\n\n");
   const visualStyle = STYLE_BY_ANGLE[angle];
   const resultColor = multiple >= 1 ? GAIN_COLOR : LOSS_COLOR;
@@ -84,8 +56,8 @@ export function buildVideoInput(scenario: ScenarioInput, angle: CreativeAngle): 
     voiceover,
     caption: buildCaption(scenario.company, scenario.ticker, amount, value, multiple, angle),
     accentColor: resultColor,
-    brandColor: KNOWN_BRAND_COLORS[scenario.ticker.toUpperCase()] ?? resultColor,
-    logoUrl: scenario.logoUrl?.trim() || getKnownLogoUrl(scenario.ticker),
+    brandColor: getBrandColor(scenario.ticker) ?? resultColor,
+    logoUrl: scenario.logoUrl?.trim() || getBrandLogoUrl(scenario.ticker),
     visualStyle,
     qualityPreset: PRESET_BY_ANGLE[angle],
     disclaimer: "Not financial advice. For education only.",
@@ -96,7 +68,6 @@ export function buildVideoInput(scenario: ScenarioInput, angle: CreativeAngle): 
 function buildScenes({
   scenario,
   angle,
-  hook,
   amount,
   value,
   spokenMultiple,
@@ -104,49 +75,48 @@ function buildScenes({
 }: {
   scenario: ScenarioInput;
   angle: CreativeAngle;
-  hook: string;
   amount: string;
   value: string;
   spokenMultiple: string;
   startLabel: string;
 }): ScriptScene[] {
   const company = scenario.company;
+  const openingHook = buildOpeningHook(company, amount, scenario.year);
   const linesByAngle: Record<CreativeAngle, string[]> = {
     regret: [
-      `Here is the CouldaMade check for ${company}.`,
-      `If ${amount} went in on ${startLabel},`,
-      "and you simply left it alone,",
+      openingHook,
+      "No perfect timing. No extra deposits.",
       `today it would be about ${value}.`,
       `That is roughly ${spokenMultiple} times the original amount.`,
       "Run yours now at couldamade.com."
     ],
     receipt: [
-      `Here is the receipt for ${company}.`,
-      `${amount} saved into it on ${startLabel}.`,
-      "No extra moves. No prediction.",
+      openingHook,
+      `The buy date was ${startLabel}.`,
+      "Then the only move was staying invested.",
       `Just years of staying invested gets to about ${value}.`,
       `That is roughly ${spokenMultiple}x your original money.`,
       "Check another one at couldamade.com."
     ],
     shock: [
-      `${company} is a wild what-if.`,
-      `${amount} saved back on ${startLabel}`,
-      `could be worth about ${value} now.`,
+      openingHook,
+      "The final number is the part that feels fake.",
+      `That one saved amount could be about ${value} now.`,
       "Not because you traded it.",
       "Because staying invested did the work.",
       "Run your what-if at couldamade.com."
     ],
     lesson: [
-      `This is the quiet lesson from ${company}.`,
-      `${amount} saved on ${startLabel}.`,
-      "The hard part was leaving it alone.",
+      openingHook,
+      "The lesson is painfully simple.",
+      "Saving early gave the money room to work.",
       `The number now is about ${value}.`,
       `That is around ${spokenMultiple}x over the years.`,
       "Try your own at couldamade.com."
     ],
     comeback: [
+      openingHook,
       `${company} did not move in a straight line.`,
-      `${amount} saved on ${startLabel}.`,
       "There were drops, noise, and boring stretches.",
       `But staying invested gets you near ${value}.`,
       `That is about ${spokenMultiple}x from patience.`,
@@ -191,6 +161,10 @@ function estimateSpokenFrames(line: string, index: number): number {
   return Math.round(words * 11.5 + punctuationPause + openingHold);
 }
 
+function buildOpeningHook(company: string, amount: string, year: number): string {
+  return `If you had invested ${amount} in ${company} in ${year}, this is what would have happened.`;
+}
+
 function buildCaption(
   company: string,
   ticker: string,
@@ -212,9 +186,4 @@ function buildCaption(
 
 function formatSpokenMultiple(multiple: number): string {
   return Math.max(1, Math.round(multiple)).toLocaleString("en-US");
-}
-
-function getKnownLogoUrl(ticker: string): string | undefined {
-  const domain = KNOWN_LOGO_DOMAINS[ticker.toUpperCase()];
-  return domain ? `https://logo.clearbit.com/${domain}` : undefined;
 }
