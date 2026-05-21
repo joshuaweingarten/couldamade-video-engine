@@ -188,12 +188,12 @@ function buildProScenes({
     "Run yours now at couldamade.com."
   ];
   const windows: Array<[number, number]> = [
-    [0, 54],
-    [48, 126],
-    [120, 245],
-    [236, 395],
-    [386, 555],
-    [546, TOTAL_FRAMES]
+    [0, 82],
+    [74, 174],
+    [166, 318],
+    [306, 444],
+    [432, 590],
+    [580, TOTAL_FRAMES]
   ];
 
   return lines.map((text, index) => ({
