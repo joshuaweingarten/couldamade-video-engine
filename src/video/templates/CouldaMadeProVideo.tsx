@@ -207,7 +207,7 @@ export function CouldaMadeProVideo(input: VideoInput) {
     "No trading. No perfect timing. Just holding.",
     `It would be about ${value} today.`,
     `That is ${multipleLabel} your money from one boring decision.`,
-    "Run yours now at couldamade.com."
+    "See what you could have made at couldamade.com."
   ];
   const scenes = fallbackLines.map((line, index) => getScene(input, index, line));
   const activeScene = scenes.find((scene) => frame >= scene.startFrame && frame <= scene.endFrame);
@@ -289,6 +289,7 @@ export function CouldaMadeProVideo(input: VideoInput) {
       <SceneLayer scene={scenes[5]} className="pro-scene pro-cta">
         <div className="pro-end-card">
           <BrandBadge logoUrl={logoUrl} initials={brandInitials} ticker={input.ticker} />
+          <div className="pro-cta-line">see what you could have made</div>
           <div className="pro-url">couldamade.com</div>
           <div className="pro-end-meta">{input.ticker.toUpperCase()} / {amount} to {value} / {multipleLabel}</div>
         </div>
