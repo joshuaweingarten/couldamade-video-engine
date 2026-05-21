@@ -274,7 +274,7 @@ export function CouldaMadeProVideo(input: VideoInput) {
         <div className="pro-value" style={{ transform: `scale(${0.86 + revealSpring * 0.14})` }}>
           {value}
         </div>
-        <div className="pro-subline">from one saved amount</div>
+        <div className="pro-subline">just by staying invested</div>
       </SceneLayer>
 
       <SceneLayer scene={scenes[4]} className="pro-scene pro-meaning">
