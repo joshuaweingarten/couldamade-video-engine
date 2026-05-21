@@ -16,15 +16,15 @@ import { getBrandColor, getBrandIcon, getBrandLogoUrl } from "../../shared/brand
 import "./pro.css";
 
 const DEFAULT_SCENE_WINDOWS: Array<[number, number]> = [
-  [0, 82],
-  [74, 174],
-  [166, 318],
-  [306, 444],
-  [432, 590],
-  [580, 660]
+  [0, 70],
+  [58, 145],
+  [132, 250],
+  [238, 350],
+  [338, 475],
+  [462, 660]
 ];
 
-const HOLD_PHRASE_OFFSETS = [28, 68, 110];
+const HOLD_PHRASE_OFFSETS = [14, 42, 72];
 
 function sceneOpacity(frame: number, start: number, end: number): number {
   return interpolate(frame, [start - 6, start, end - 10, end], [0, 1, 1, 0], {
