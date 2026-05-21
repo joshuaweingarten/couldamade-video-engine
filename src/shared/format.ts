@@ -5,6 +5,10 @@ export function formatDollar(value: number): string {
   return `$${Math.round(value).toLocaleString("en-US")}`;
 }
 
+export function formatMultiple(value: number): string {
+  return `${Math.max(1, Math.round(value)).toLocaleString("en-US")}x`;
+}
+
 function formatCompactNumber(value: number): string {
   const rounded = value >= 10 ? value.toFixed(0) : value.toFixed(1);
   return rounded.replace(/\.0$/, "");
