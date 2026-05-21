@@ -23,6 +23,10 @@ const NARRATION_STYLE_PROMPT =
   "like you are pointing out an uncomfortable money truth. Use crisp pacing and clear pronunciation. No hype, no radio-announcer energy, " +
   "and no friendly customer-service tone. Do not add any words, commentary, or filler not present in the script.";
 
+function getCompositionId(input: VideoInput): "CouldaMadeFinance" | "CouldaMadePro" {
+  return input.template === "couldamade-pro" ? "CouldaMadePro" : "CouldaMadeFinance";
+}
+
 async function getBundleUrl(): Promise<string> {
   if (bundledServeUrl) return bundledServeUrl;
   bundledServeUrl = await bundle({
@@ -72,10 +76,11 @@ export async function renderJobToFile(
   const input = await withRenderStage("generate narration audio", () => attachNarrationAudio(job.input, job.id));
   const serveUrl = await withRenderStage("bundle Remotion video", () => getBundleUrl());
   const browserExecutable = getBrowserExecutable();
+  const compositionId = getCompositionId(input);
   const composition = await withRenderStage("load Remotion composition", () =>
     selectComposition({
       serveUrl,
-      id: "CouldaMadeFinance",
+      id: compositionId,
       inputProps: input,
       browserExecutable,
       chromiumOptions,
