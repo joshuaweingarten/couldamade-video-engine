@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { Download, FileText, Layers, Play, RefreshCw, Search, Send, Shuffle, Sparkles } from "lucide-react";
+import { Download, FileText, Layers, Play, RefreshCw, Search, Send, Shuffle, Sparkles, Trash2 } from "lucide-react";
 import type { ContentItem, CreativeAngle, RenderJob, ScenarioInput, VideoInput } from "../shared/types";
 import "./styles.css";
 
@@ -66,6 +66,22 @@ function App() {
     const data = (await jobsRes.json()) as { jobs: RenderJob[] };
     setJobs(data.jobs);
     setContentItems((await contentRes.json()) as ContentItem[]);
+  }
+
+  async function clearStuckJobs() {
+    setBusy(true);
+    setActionError("");
+    try {
+      const res = await fetch("/api/jobs/cleanup", { method: "POST" });
+      if (!res.ok) throw new Error(await res.text());
+      const data = (await res.json()) as { jobs: RenderJob[] };
+      setJobs(data.jobs);
+      await refreshJobs();
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Could not clear stuck jobs.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   useEffect(() => {
@@ -406,6 +422,15 @@ function App() {
           <div>
             <p className="eyebrow">Library</p>
             <h2>Render jobs</h2>
+          </div>
+          <div className="header-actions">
+            <button className="secondary-button" type="button" onClick={clearStuckJobs} disabled={busy || jobs.length === 0}>
+              <Trash2 size={18} />
+              Clear stuck
+            </button>
+            <button className="icon-button" type="button" onClick={refreshJobs} aria-label="Refresh jobs">
+              <RefreshCw size={20} />
+            </button>
           </div>
         </div>
 
