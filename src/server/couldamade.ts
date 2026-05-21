@@ -3,6 +3,28 @@ import type { ScenarioInput } from "../shared/types";
 
 const DEFAULT_BASE = "https://couldamade.com";
 const TIMEOUT_MS = 10_000;
+const calculationCache = new Map<string, ExternalScenario>();
+
+const LOCAL_ASSETS: CouldaMadeAsset[] = [
+  { asset: "AAPL", assetType: "stock", name: "Apple" },
+  { asset: "MSFT", assetType: "stock", name: "Microsoft" },
+  { asset: "NVDA", assetType: "stock", name: "Nvidia" },
+  { asset: "TSLA", assetType: "stock", name: "Tesla" },
+  { asset: "AMZN", assetType: "stock", name: "Amazon" },
+  { asset: "GOOGL", assetType: "stock", name: "Alphabet" },
+  { asset: "META", assetType: "stock", name: "Meta Platforms" },
+  { asset: "NFLX", assetType: "stock", name: "Netflix" },
+  { asset: "AMD", assetType: "stock", name: "Advanced Micro Devices" },
+  { asset: "AVGO", assetType: "stock", name: "Broadcom" },
+  { asset: "PLTR", assetType: "stock", name: "Palantir" },
+  { asset: "SHOP", assetType: "stock", name: "Shopify" },
+  { asset: "COIN", assetType: "stock", name: "Coinbase" },
+  { asset: "MSTR", assetType: "stock", name: "MicroStrategy" },
+  { asset: "SPY", assetType: "stock", name: "SPDR S&P 500 ETF" },
+  { asset: "QQQ", assetType: "stock", name: "Invesco QQQ Trust" },
+  { asset: "BTC", assetType: "crypto", name: "Bitcoin" },
+  { asset: "ETH", assetType: "crypto", name: "Ethereum" }
+];
 
 export interface ExternalScenario {
   id?: string;
@@ -54,8 +76,29 @@ export function registerCouldaMadeRoutes(app: Express): void {
       return;
     }
 
+    const cacheKey = `${assetType}:${asset}:${amount}:${date}`.toLowerCase();
+    const cached = calculationCache.get(cacheKey);
+    if (cached) {
+      res.json(cached);
+      return;
+    }
+
     const proxied = await proxyGet("/api/calculate", { asset, assetType, amount, date });
-    sendScenarioResponse(res, proxied, "couldamade.com /api/calculate failed");
+    const scenario = scenarioFromProxy(proxied);
+    if (scenario) {
+      calculationCache.set(cacheKey, scenario);
+      res.json(scenario);
+      return;
+    }
+
+    const fallback = await calculateStockFallback(asset, assetType, amount, date);
+    if (fallback) {
+      calculationCache.set(cacheKey, fallback);
+      res.json(fallback);
+      return;
+    }
+
+    sendScenarioError(res, proxied, "CouldaMade/Yahoo is temporarily rate-limited. Try again in a few minutes, or enter the current value manually and generate ideas.");
   });
 
   app.get("/api/external/random", async (_req, res) => {
@@ -70,20 +113,14 @@ export function registerCouldaMadeRoutes(app: Express): void {
       return;
     }
     const proxied = await proxyGet("/api/assets/search", { q });
-    if (!proxied.ok) {
-      res.status(proxied.status).json({ error: "couldamade.com /api/assets/search failed" });
-      return;
-    }
-    res.json(normaliseAssetArray(proxied.body));
+    const remote = proxied.ok ? normaliseAssetArray(proxied.body) : [];
+    res.json(mergeAssets(remote, searchLocalAssets(q)));
   });
 
   app.get("/api/external/trending", async (_req, res) => {
     const proxied = await proxyGet("/api/assets/trending", {});
-    if (!proxied.ok) {
-      res.status(proxied.status).json({ error: "couldamade.com /api/assets/trending failed" });
-      return;
-    }
-    res.json(normaliseAssetArray(proxied.body));
+    const remote = proxied.ok ? normaliseAssetArray(proxied.body) : [];
+    res.json(mergeAssets(remote, LOCAL_ASSETS.slice(0, 8)));
   });
 
   app.get("/api/external/start-date", async (req, res) => {
@@ -153,16 +190,23 @@ async function proxyGet(path: string, params: Record<string, string>): Promise<{
 }
 
 function sendScenarioResponse(res: Response, proxied: { ok: boolean; status: number; body: unknown }, error: string): void {
-  if (!proxied.ok) {
-    res.status(proxied.status).json({ error, raw: proxied.body });
-    return;
-  }
-  const scenario = normaliseItem(unwrapSingle(proxied.body)) ?? normaliseArray(proxied.body)?.[0];
+  if (!proxied.ok) return sendScenarioError(res, proxied, error);
+  const scenario = scenarioFromProxy(proxied);
   if (!scenario) {
     res.status(502).json({ error: "couldamade.com returned an unrecognised response shape", raw: proxied.body });
     return;
   }
   res.json(scenario);
+}
+
+function sendScenarioError(res: Response, proxied: { ok: boolean; status: number; body: unknown }, error: string): void {
+  res.status(proxied.status || 502).json({ error, raw: proxied.body });
+}
+
+function scenarioFromProxy(proxied: { ok: boolean; body: unknown }): ExternalScenario | null {
+  if (!proxied.ok) return null;
+  const scenario = normaliseItem(unwrapSingle(proxied.body)) ?? normaliseArray(proxied.body)?.[0];
+  return scenario ?? null;
 }
 
 function normaliseArray(raw: unknown): ExternalScenario[] | null {
@@ -230,6 +274,95 @@ function normaliseAssetItem(raw: unknown): CouldaMadeAsset | null {
     name: str(item.name) ?? str(item.asset_name),
     logoUrl: str(item.logoUrl) ?? str(item.logo_url)
   };
+}
+
+function searchLocalAssets(query: string): CouldaMadeAsset[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  return LOCAL_ASSETS.filter((asset) =>
+    asset.asset.toLowerCase().includes(q) ||
+    asset.name?.toLowerCase().includes(q)
+  ).slice(0, 8);
+}
+
+function mergeAssets(primary: CouldaMadeAsset[], fallback: CouldaMadeAsset[]): CouldaMadeAsset[] {
+  const seen = new Set<string>();
+  const merged = [];
+  for (const asset of [...primary, ...fallback]) {
+    const key = `${asset.assetType}:${asset.asset}`.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.push(asset);
+  }
+  return merged.slice(0, 8);
+}
+
+async function calculateStockFallback(asset: string, assetType: string, amount: string, date: string): Promise<ExternalScenario | null> {
+  if (assetType.toLowerCase() !== "stock") return null;
+  const invested = Number.parseFloat(amount);
+  if (!Number.isFinite(invested) || invested <= 0) return null;
+  const start = new Date(date);
+  if (Number.isNaN(start.getTime())) return null;
+
+  const symbol = toStooqSymbol(asset);
+  const startParam = compactDate(start);
+  const endParam = compactDate(new Date());
+  const url = `https://stooq.com/q/d/l/?s=${encodeURIComponent(symbol)}&d1=${startParam}&d2=${endParam}&i=d`;
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        Accept: "text/csv",
+        "User-Agent": "CouldaMade-VideoFactory/1.0"
+      },
+      signal: AbortSignal.timeout(TIMEOUT_MS)
+    });
+    if (!response.ok) return null;
+    const prices = parseStooqCsv(await response.text());
+    if (prices.length < 2) return null;
+    const first = prices[0];
+    const last = prices[prices.length - 1];
+    if (first.close <= 0 || last.close <= 0) return null;
+    const finalValue = Math.round((invested / first.close) * last.close);
+    return {
+      asset: localAssetName(asset) ?? asset.toUpperCase(),
+      ticker: asset.toUpperCase(),
+      category: "stock",
+      startDate: first.date,
+      endDate: last.date,
+      amountInvested: Math.round(invested),
+      finalValue,
+      returnMultiple: finalValue / invested,
+      dataSource: "stooq.com fallback"
+    };
+  } catch {
+    return null;
+  }
+}
+
+function parseStooqCsv(csv: string): Array<{ date: string; close: number }> {
+  return csv
+    .trim()
+    .split(/\r?\n/)
+    .slice(1)
+    .map((line) => {
+      const [date, , , , close] = line.split(",");
+      return { date, close: Number.parseFloat(close) };
+    })
+    .filter((row) => row.date && Number.isFinite(row.close));
+}
+
+function toStooqSymbol(asset: string): string {
+  const cleaned = asset.trim().toLowerCase().replace(/[^a-z0-9.-]/g, "");
+  return cleaned.includes(".") ? cleaned : `${cleaned}.us`;
+}
+
+function compactDate(date: Date): string {
+  return `${date.getUTCFullYear()}${String(date.getUTCMonth() + 1).padStart(2, "0")}${String(date.getUTCDate()).padStart(2, "0")}`;
+}
+
+function localAssetName(asset: string): string | undefined {
+  return LOCAL_ASSETS.find((item) => item.asset.toLowerCase() === asset.toLowerCase())?.name;
 }
 
 function unwrapSingle(body: unknown): unknown {
