@@ -132,7 +132,7 @@ function buildScenes({
       "Then the only move was staying invested.",
       `Just years of staying invested gets to about ${value}.`,
       `That is roughly ${multipleLabel} your original money.`,
-      "Check another one at couldamade.com."
+      "See what you could have made at couldamade.com."
     ],
     shock: [
       openingHook,
@@ -140,7 +140,7 @@ function buildScenes({
       `That one saved amount could be about ${value} now.`,
       "Not because you traded it.",
       "Because staying invested did the work.",
-      "Run your what-if at couldamade.com."
+      "See what you could have made at couldamade.com."
     ],
     lesson: [
       openingHook,
@@ -148,7 +148,7 @@ function buildScenes({
       "Saving early gave the money room to work.",
       `The number now is about ${value}.`,
       `That is around ${multipleLabel} over the years.`,
-      "Try your own at couldamade.com."
+      "See what you could have made at couldamade.com."
     ],
     comeback: [
       openingHook,
@@ -156,7 +156,7 @@ function buildScenes({
       "There were drops, noise, and boring stretches.",
       `But staying invested gets you near ${value}.`,
       `That is about ${multipleLabel} from patience.`,
-      "Make your own at couldamade.com."
+      "See what you could have made at couldamade.com."
     ]
   };
 
