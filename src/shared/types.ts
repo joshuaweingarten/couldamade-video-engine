@@ -4,6 +4,7 @@ export const platformSchema = z.enum(["tiktok", "instagram", "youtube"]);
 export const angleSchema = z.enum(["regret", "receipt", "shock", "lesson", "comeback"]);
 export const visualStyleSchema = z.enum(["terminal", "receipt", "regret", "clean", "newsroom"]);
 export const qualityPresetSchema = z.enum(["punchy", "clean-finance", "dramatic-regret"]);
+export const templateSchema = z.enum(["couldamade-finance", "couldamade-pro"]);
 
 export const scriptSceneSchema = z.object({
   text: z.string().min(1).max(180),
@@ -34,7 +35,7 @@ export const videoInputSchema = z.object({
   disclaimer: z.string().max(220).default("Not financial advice. For education only."),
   voiceoverAudioUrl: z.string().max(500).optional(),
   scenes: z.array(scriptSceneSchema).min(1).max(8).optional(),
-  template: z.literal("couldamade-finance").default("couldamade-finance")
+  template: templateSchema.default("couldamade-finance")
 });
 
 export type VideoInput = z.infer<typeof videoInputSchema>;
@@ -43,6 +44,7 @@ export type SocialPlatform = z.infer<typeof platformSchema>;
 export type CreativeAngle = z.infer<typeof angleSchema>;
 export type VisualStyle = z.infer<typeof visualStyleSchema>;
 export type QualityPreset = z.infer<typeof qualityPresetSchema>;
+export type VideoTemplate = z.infer<typeof templateSchema>;
 
 export const scenarioSchema = z.object({
   ticker: z.string().min(1).max(12),
