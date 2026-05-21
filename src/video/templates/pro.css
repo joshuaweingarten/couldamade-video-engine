@@ -26,19 +26,17 @@
 
 .pro-color-wash {
   background:
-    radial-gradient(circle at 52% 48%, color-mix(in srgb, var(--result) 24%, transparent), transparent 40%),
-    linear-gradient(180deg, rgba(0, 0, 0, 0.15), color-mix(in srgb, var(--result-soft) 28%, transparent));
-  mix-blend-mode: screen;
+    radial-gradient(circle at 52% 48%, rgba(40, 242, 150, 0.12), transparent 38%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.15), rgba(3, 22, 14, 0.28));
 }
 
 .pro-vignette {
-  box-shadow: inset 0 0 210px rgba(0, 0, 0, 0.92), inset 0 0 35px rgba(0, 0, 0, 0.75);
+  box-shadow: inset 0 0 130px rgba(0, 0, 0, 0.9);
 }
 
 .pro-scanlines {
-  opacity: 0.19;
-  background: repeating-linear-gradient(180deg, transparent 0, transparent 5px, rgba(255, 255, 255, 0.12) 6px);
-  mix-blend-mode: overlay;
+  opacity: 0.08;
+  background: repeating-linear-gradient(180deg, transparent 0, transparent 9px, rgba(255, 255, 255, 0.1) 10px);
 }
 
 .pro-chart {
@@ -47,7 +45,6 @@
   width: 1200px;
   height: 2100px;
   opacity: 0.92;
-  filter: drop-shadow(0 0 28px color-mix(in srgb, var(--result) 80%, transparent));
 }
 
 .pro-chart path {
@@ -67,7 +64,7 @@
 .pro-money-rain span {
   position: absolute;
   white-space: nowrap;
-  color: rgba(255, 255, 255, 0.58);
+  color: rgba(255, 255, 255, 0.38);
   font-family: "Courier New", monospace;
   font-size: 43px;
   font-weight: 900;
@@ -95,7 +92,7 @@
   color: var(--result);
   font-size: 58px;
   line-height: 0.92;
-  text-shadow: 0 0 22px color-mix(in srgb, var(--result) 70%, transparent);
+  text-shadow: 0 8px 0 rgba(0, 0, 0, 0.32);
 }
 
 .pro-topbar span {
@@ -120,7 +117,7 @@
   color: #101010;
   font-size: 42px;
   font-weight: 900;
-  box-shadow: 0 0 34px color-mix(in srgb, var(--brand) 46%, transparent), 0 18px 48px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.36);
   overflow: hidden;
 }
 
@@ -164,7 +161,7 @@
   right: 0;
   color: var(--result);
   font-size: 37px;
-  text-shadow: 0 0 22px color-mix(in srgb, var(--result) 80%, transparent);
+  text-shadow: 0 7px 0 rgba(0, 0, 0, 0.32);
 }
 
 .pro-hook-copy {
@@ -194,7 +191,7 @@
   font-size: 176px;
   line-height: 0.9;
   font-weight: 950;
-  text-shadow: 0 0 34px color-mix(in srgb, var(--result) 66%, transparent);
+  text-shadow: 0 13px 0 rgba(0, 0, 0, 0.38);
 }
 
 .pro-company {
@@ -244,7 +241,7 @@
   font-size: 238px;
   line-height: 0.88;
   font-weight: 950;
-  text-shadow: 0 0 44px color-mix(in srgb, var(--result) 72%, transparent), 0 16px 0 rgba(0, 0, 0, 0.46);
+  text-shadow: 0 16px 0 rgba(0, 0, 0, 0.46);
 }
 
 .pro-subline {
@@ -286,7 +283,7 @@
   justify-content: center;
   border: 5px solid rgba(255, 255, 255, 0.22);
   background: rgba(0, 0, 0, 0.52);
-  box-shadow: 0 0 46px color-mix(in srgb, var(--result) 26%, transparent);
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.38);
 }
 
 .pro-end-card .pro-brand-badge {
