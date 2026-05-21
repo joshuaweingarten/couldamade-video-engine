@@ -25,7 +25,42 @@ const GAIN_COLOR = "#28f296";
 const LOSS_COLOR = "#ff4d5d";
 
 export function buildVideoIdeas(scenario: ScenarioInput): VideoInput[] {
-  return scenario.angles.map((angle) => buildVideoInput(scenario, angle));
+  return [buildProVideoInput(scenario), ...scenario.angles.map((angle) => buildVideoInput(scenario, angle))];
+}
+
+export function buildProVideoInput(scenario: ScenarioInput): VideoInput {
+  const amount = formatDollar(scenario.amount);
+  const value = formatDollar(scenario.value);
+  const multiple = scenario.value / scenario.amount;
+  const multipleLabel = formatMultiple(multiple);
+  const resultColor = multiple >= 1 ? GAIN_COLOR : LOSS_COLOR;
+  const hook = `${amount} in ${scenario.company} did something stupid.`;
+  const scenes = buildProScenes({ scenario, amount, value, multipleLabel });
+  const voiceover = scenes.map((scene) => scene.text).join("\n\n");
+
+  return {
+    template: "couldamade-pro",
+    ticker: scenario.ticker,
+    company: scenario.company,
+    assetType: scenario.assetType,
+    amount: scenario.amount,
+    value: scenario.value,
+    year: scenario.year,
+    month: scenario.month,
+    day: scenario.day,
+    platform: scenario.platform,
+    angle: "shock",
+    hook,
+    voiceover,
+    caption: `${amount} in ${scenario.company} (${scenario.ticker.toUpperCase()}) in ${scenario.year} would be about ${value} today. That is ${multipleLabel} your money. Run yours at couldamade.com. For education only.`,
+    accentColor: resultColor,
+    brandColor: getBrandColor(scenario.ticker) ?? resultColor,
+    logoUrl: scenario.logoUrl?.trim() || getBrandLogoUrl(scenario.ticker),
+    visualStyle: "terminal",
+    qualityPreset: "punchy",
+    disclaimer: "Not financial advice. For education only.",
+    scenes
+  };
 }
 
 export function buildVideoInput(scenario: ScenarioInput, angle: CreativeAngle): VideoInput {
@@ -127,6 +162,42 @@ function buildScenes({
   return buildAdaptiveScenes(linesByAngle[angle]).map((scene) => ({
     ...scene,
     emphasis: scene.text.includes(value) ? value : scene.text.includes(multipleLabel) ? multipleLabel : undefined
+  }));
+}
+
+function buildProScenes({
+  scenario,
+  amount,
+  value,
+  multipleLabel
+}: {
+  scenario: ScenarioInput;
+  amount: string;
+  value: string;
+  multipleLabel: string;
+}): ScriptScene[] {
+  const lines = [
+    `${amount} in ${scenario.company} did something stupid.`,
+    `If you had invested it in ${scenario.company} in ${scenario.year},`,
+    "No trading. No perfect timing. Just holding.",
+    `It would be about ${value} today.`,
+    `That is ${multipleLabel} your money from one boring decision.`,
+    "Run yours now at couldamade.com."
+  ];
+  const windows: Array<[number, number]> = [
+    [0, 54],
+    [48, 126],
+    [120, 245],
+    [236, 395],
+    [386, 555],
+    [546, TOTAL_FRAMES]
+  ];
+
+  return lines.map((text, index) => ({
+    text,
+    startFrame: windows[index][0],
+    endFrame: windows[index][1],
+    emphasis: text.includes(value) ? value : text.includes(multipleLabel) ? multipleLabel : text.includes(amount) ? amount : undefined
   }));
 }
 
