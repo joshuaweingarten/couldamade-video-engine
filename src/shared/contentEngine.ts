@@ -53,7 +53,7 @@ export function buildProVideoInput(scenario: ScenarioInput): VideoInput {
     angle: "shock",
     hook,
     voiceover,
-    caption: `${amount} in ${company} (${scenario.ticker.toUpperCase()}) in ${scenario.year} would be about ${value} today. That is ${multipleLabel} your money. Run yours at couldamade.com. For education only.`,
+    caption: `${amount} in ${company} (${scenario.ticker.toUpperCase()}) in ${scenario.year} would be about ${value} today. That is ${multipleLabel} your money. See what you could have made at couldamade.com. For education only.`,
     accentColor: resultColor,
     brandColor: getBrandColor(scenario.ticker) ?? resultColor,
     logoUrl: scenario.logoUrl?.trim() || getBrandLogoUrl(scenario.ticker),
@@ -124,7 +124,7 @@ function buildScenes({
       "No perfect timing. No extra deposits.",
       `today it would be about ${value}.`,
       `That is roughly ${multipleLabel} the original amount.`,
-      "Run yours now at couldamade.com."
+      "See what you could have made at couldamade.com."
     ],
     receipt: [
       openingHook,
@@ -160,7 +160,7 @@ function buildScenes({
     ]
   };
 
-  return buildAdaptiveScenes(linesByAngle[angle]).map((scene) => ({
+  return buildAdaptiveScenes(linesByAngle[angle]).map((scene, index) => ({
     ...scene,
     emphasis: scene.text.includes(value) ? value : scene.text.includes(multipleLabel) ? multipleLabel : undefined
   }));
@@ -185,7 +185,7 @@ function buildProScenes({
     "No trading. No perfect timing. Just holding.",
     `It would be about ${value} today.`,
     `That is ${multipleLabel} your money from one boring decision.`,
-    "Run yours now at couldamade.com."
+    "See what you could have made at couldamade.com."
   ];
   const windows: Array<[number, number]> = [
     [0, 82],
