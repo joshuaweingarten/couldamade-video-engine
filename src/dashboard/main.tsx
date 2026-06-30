@@ -48,6 +48,10 @@ type CouldaMadeAsset = {
   logoUrl?: string;
 };
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
+
 function App() {
   const [scenario, setScenario] = useState<ScenarioInput>(defaultScenario);
   const [ideas, setIdeas] = useState<VideoInput[]>([]);
@@ -61,13 +65,19 @@ function App() {
   const completedCount = jobs.filter((job) => job.status === "done").length;
 
   async function refreshJobs() {
-    const [jobsRes, contentRes] = await Promise.all([
-      fetch("/api/jobs"),
-      fetch("/api/content/items")
-    ]);
-    const data = (await jobsRes.json()) as { jobs: RenderJob[] };
-    setJobs(data.jobs);
-    setContentItems((await contentRes.json()) as ContentItem[]);
+    try {
+      const [jobsRes, contentRes] = await Promise.all([
+        fetch("/api/jobs"),
+        fetch("/api/content/items")
+      ]);
+      if (!jobsRes.ok) throw new Error(await jobsRes.text());
+      if (!contentRes.ok) throw new Error(await contentRes.text());
+      const data = (await jobsRes.json()) as { jobs: RenderJob[] };
+      setJobs(data.jobs);
+      setContentItems((await contentRes.json()) as ContentItem[]);
+    } catch (error) {
+      setActionError((current) => current || getErrorMessage(error, "Could not refresh render jobs."));
+    }
   }
 
   async function clearStuckJobs() {
@@ -110,6 +120,7 @@ function App() {
 
   async function generateIdeas(nextScenario = scenario) {
     setBusy(true);
+    setActionError("");
     try {
       const res = await fetch("/api/ideas", {
         method: "POST",
@@ -119,6 +130,8 @@ function App() {
       if (!res.ok) throw new Error(await res.text());
       const data = (await res.json()) as { videos: VideoInput[] };
       setIdeas(data.videos);
+    } catch (error) {
+      setActionError(getErrorMessage(error, "Could not generate video ideas."));
     } finally {
       setBusy(false);
     }
@@ -185,6 +198,7 @@ function App() {
 
   async function saveIdeasToLibrary() {
     setBusy(true);
+    setActionError("");
     try {
       const res = await fetch("/api/content/generate-finance", {
         method: "POST",
@@ -195,6 +209,8 @@ function App() {
       const items = (await res.json()) as ContentItem[];
       setIdeas(items.map((item) => item.video));
       await refreshJobs();
+    } catch (error) {
+      setActionError(getErrorMessage(error, "Could not save ideas to the content library."));
     } finally {
       setBusy(false);
     }
@@ -539,7 +555,46 @@ function JobCard({ job }: { job: RenderJob }) {
   );
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+type DashboardErrorBoundaryState = {
+  message: string;
+};
+
+class DashboardErrorBoundary extends React.Component<React.PropsWithChildren, DashboardErrorBoundaryState> {
+  state: DashboardErrorBoundaryState = { message: "" };
+
+  static getDerivedStateFromError(error: unknown): DashboardErrorBoundaryState {
+    return { message: getErrorMessage(error, "The dashboard hit an unexpected error.") };
+  }
+
+  render() {
+    if (this.state.message) {
+      return (
+        <main className="app-shell">
+          <section className="panel fatal-error">
+            <p className="eyebrow">Dashboard error</p>
+            <h1>The app hit a display problem.</h1>
+            <p>{this.state.message}</p>
+            <button className="primary-button" type="button" onClick={() => window.location.reload()}>
+              Reload dashboard
+            </button>
+          </section>
+        </main>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+const root = document.getElementById("root");
+
+if (root) {
+  createRoot(root).render(
+    <DashboardErrorBoundary>
+      <App />
+    </DashboardErrorBoundary>
+  );
+}
 
 function cleanCompanyName(raw: string): string {
   return raw
