@@ -13,6 +13,11 @@ export const scriptSceneSchema = z.object({
   emphasis: z.string().max(80).optional()
 });
 
+export const chartPointSchema = z.object({
+  date: z.string().min(4).max(20),
+  close: z.coerce.number().positive()
+});
+
 export const videoInputSchema = z.object({
   ticker: z.string().min(1).max(12).default("TSLA"),
   company: z.string().min(1).max(60).default("Tesla"),
@@ -35,11 +40,13 @@ export const videoInputSchema = z.object({
   disclaimer: z.string().max(220).default("Not financial advice. For education only."),
   voiceoverAudioUrl: z.string().max(500).optional(),
   scenes: z.array(scriptSceneSchema).min(1).max(8).optional(),
+  chartPoints: z.array(chartPointSchema).min(2).max(260).optional(),
   template: templateSchema.default("couldamade-finance")
 });
 
 export type VideoInput = z.infer<typeof videoInputSchema>;
 export type ScriptScene = z.infer<typeof scriptSceneSchema>;
+export type ChartPoint = z.infer<typeof chartPointSchema>;
 export type SocialPlatform = z.infer<typeof platformSchema>;
 export type CreativeAngle = z.infer<typeof angleSchema>;
 export type VisualStyle = z.infer<typeof visualStyleSchema>;
@@ -56,6 +63,7 @@ export const scenarioSchema = z.object({
   month: z.coerce.number().int().min(1).max(12).default(1),
   day: z.coerce.number().int().min(1).max(31).default(1),
   logoUrl: z.string().max(500).optional(),
+  chartPoints: z.array(chartPointSchema).min(2).max(260).optional(),
   platform: platformSchema.default("tiktok"),
   angles: z.array(angleSchema).min(1).max(5).default(["regret", "shock", "lesson"])
 });
