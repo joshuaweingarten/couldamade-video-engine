@@ -10,21 +10,21 @@ import {
 } from "remotion";
 import { useState } from "react";
 import type React from "react";
-import type { VideoInput } from "../../shared/types";
+import type { ChartPoint, VideoInput } from "../../shared/types";
 import { formatDate, formatDollar, formatMultiple } from "../../shared/format";
 import { getBrandColor, getBrandIcon, getBrandLogoUrl } from "../../shared/brandIconDatabase";
 import "./pro.css";
 
 const DEFAULT_SCENE_WINDOWS: Array<[number, number]> = [
-  [0, 70],
-  [58, 145],
-  [132, 250],
-  [238, 350],
-  [338, 475],
+  [0, 68],
+  [54, 146],
+  [128, 252],
+  [232, 352],
+  [334, 482],
   [462, 660]
 ];
 
-const HOLD_PHRASE_OFFSETS = [14, 42, 72];
+const HOLD_PHRASE_OFFSETS = [20, 52, 86];
 
 function sceneOpacity(frame: number, start: number, end: number): number {
   return interpolate(frame, [start - 6, start, end - 10, end], [0, 1, 1, 0], {
@@ -97,7 +97,7 @@ function BrandIconSvg({ ticker }: { ticker: string }) {
 function LogoImage({ logoUrl, initials }: { logoUrl?: string; initials: string }) {
   const [failed, setFailed] = useState(false);
   if (logoUrl && !failed) {
-    return <img src={logoUrl} onError={() => setFailed(true)} />;
+    return <img src={logoUrl} crossOrigin="anonymous" referrerPolicy="no-referrer" onError={() => setFailed(true)} />;
   }
   return <span>{initials}</span>;
 }
@@ -138,15 +138,46 @@ function MoneyRain({ amount, value, multiple }: { amount: string; value: string;
   );
 }
 
-function ChartRibbon({ isGain }: { isGain: boolean }) {
+function downsamplePoints(points: ChartPoint[], maxPoints = 90): ChartPoint[] {
+  if (points.length <= maxPoints) return points;
+  const step = (points.length - 1) / (maxPoints - 1);
+  return Array.from({ length: maxPoints }, (_, index) => points[Math.round(index * step)]);
+}
+
+function chartPathFromPoints(points: ChartPoint[]): string | null {
+  const clean = downsamplePoints(points.filter((point) => Number.isFinite(point.close) && point.close > 0));
+  if (clean.length < 2) return null;
+  const closes = clean.map((point) => point.close);
+  const min = Math.min(...closes);
+  const max = Math.max(...closes);
+  const range = Math.max(0.0001, max - min);
+  const left = -36;
+  const width = 1152;
+  const top = 255;
+  const height = 1360;
+
+  return clean
+    .map((point, index) => {
+      const x = left + (index / (clean.length - 1)) * width;
+      const y = top + (1 - (point.close - min) / range) * height;
+      return `${index === 0 ? "M" : "L"} ${Math.round(x)} ${Math.round(y)}`;
+    })
+    .join(" ");
+}
+
+function ChartRibbon({ isGain, points }: { isGain: boolean; points?: ChartPoint[] }) {
   const frame = useCurrentFrame();
-  const p = interpolate(frame, [45, 390], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const p = interpolate(frame, [18, 330], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   const gainPath = "M -30 1520 L 130 1370 L 250 1430 L 385 1040 L 520 1160 L 670 780 L 800 925 L 940 420 L 1140 230";
   const lossPath = "M -30 330 L 120 460 L 265 405 L 400 760 L 540 690 L 675 1060 L 820 960 L 955 1435 L 1140 1605";
+  const actualPath = points ? chartPathFromPoints(points) : null;
+  const path = actualPath ?? (isGain ? gainPath : lossPath);
   return (
-    <svg className="pro-chart" viewBox="0 0 1080 1920">
+    <svg className={`pro-chart ${actualPath ? "actual" : "stylized"}`} viewBox="0 0 1080 1920">
+      <path className="pro-chart-shadow" d={path} pathLength={1} />
       <path
-        d={isGain ? gainPath : lossPath}
+        className="pro-chart-main"
+        d={path}
         pathLength={1}
         style={{
           strokeDasharray: 1,
@@ -228,7 +259,7 @@ export function CouldaMadeProVideo(input: VideoInput) {
       <AbsoluteFill className="pro-world">
         <div className="pro-grid" />
         <MoneyRain amount={amount} value={value} multiple={multipleLabel} />
-        <ChartRibbon isGain={isGain} />
+        <ChartRibbon isGain={isGain} points={input.chartPoints} />
         <div className="pro-color-wash" />
       </AbsoluteFill>
       <div className="pro-vignette" />
