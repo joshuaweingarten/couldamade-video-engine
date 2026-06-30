@@ -71,7 +71,7 @@ export function registerCouldaMadeRoutes(app: Express): void {
   });
 
   app.get("/api/external/calculate", async (req, res) => {
-    const { asset, assetType, amount, date, currentValue } = req.query as Record<string, string>;
+    const { asset, assetType, amount, date } = req.query as Record<string, string>;
     if (!asset || !assetType || !amount || !date) {
       res.status(400).json({ error: "Required: asset, assetType, amount, date" });
       return;
@@ -93,7 +93,7 @@ export function registerCouldaMadeRoutes(app: Express): void {
       return;
     }
 
-    const fallback = await calculateStockFallback(asset, assetType, amount, date, currentValue);
+    const fallback = await calculateStockFallback(asset, assetType, amount, date);
     if (fallback) {
       calculationCache.set(cacheKey, fallback);
       res.json(fallback);
@@ -301,16 +301,16 @@ function mergeAssets(primary: CouldaMadeAsset[], fallback: CouldaMadeAsset[]): C
   return merged.slice(0, 8);
 }
 
-async function calculateStockFallback(asset: string, assetType: string, amount: string, date: string, currentValue?: string): Promise<ExternalScenario | null> {
-  if (!isStockLike(assetType)) return calculateManualFallback(asset, assetType, amount, date, currentValue);
+async function calculateStockFallback(asset: string, assetType: string, amount: string, date: string): Promise<ExternalScenario | null> {
+  if (!isStockLike(assetType)) return null;
   const invested = Number.parseFloat(amount);
   if (!Number.isFinite(invested) || invested <= 0) return null;
 
   const prices = await fetchStockChartPoints(asset, assetType, date);
-  if (!prices || prices.length < 2) return calculateManualFallback(asset, assetType, amount, date, currentValue);
+  if (!prices || prices.length < 2) return null;
   const first = prices[0];
   const last = prices[prices.length - 1];
-  if (first.close <= 0 || last.close <= 0) return calculateManualFallback(asset, assetType, amount, date, currentValue);
+  if (first.close <= 0 || last.close <= 0) return null;
   const finalValue = Math.round((invested / first.close) * last.close);
   const ticker = resolveAssetTicker(asset) ?? asset.toUpperCase();
   return {
@@ -401,28 +401,6 @@ function downsampleChartPoints(points: ChartPoint[], maxPoints = 220): ChartPoin
   if (points.length <= maxPoints) return points;
   const step = (points.length - 1) / (maxPoints - 1);
   return Array.from({ length: maxPoints }, (_, index) => points[Math.round(index * step)]);
-}
-
-function calculateManualFallback(asset: string, assetType: string, amount: string, date: string, currentValue?: string): ExternalScenario | null {
-  const invested = Number.parseFloat(amount);
-  const finalValue = currentValue ? Number.parseFloat(currentValue) : NaN;
-  const start = new Date(date);
-  if (!Number.isFinite(invested) || invested <= 0 || !Number.isFinite(finalValue) || finalValue <= 0 || Number.isNaN(start.getTime())) {
-    return null;
-  }
-
-  const ticker = resolveAssetTicker(asset) ?? asset.toUpperCase();
-  return {
-    asset: localAssetName(asset) ?? ticker,
-    ticker,
-    category: assetType,
-    startDate: date,
-    endDate: new Date().toISOString().slice(0, 10),
-    amountInvested: Math.round(invested),
-    finalValue: Math.round(finalValue),
-    returnMultiple: finalValue / invested,
-    dataSource: "manual value fallback"
-  };
 }
 
 function isStockLike(assetType: string): boolean {
