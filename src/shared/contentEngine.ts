@@ -57,6 +57,7 @@ export function buildProVideoInput(scenario: ScenarioInput): VideoInput {
     accentColor: resultColor,
     brandColor: getBrandColor(scenario.ticker) ?? resultColor,
     logoUrl: scenario.logoUrl?.trim() || getBrandLogoUrl(scenario.ticker),
+    chartPoints: scenario.chartPoints,
     visualStyle: "terminal",
     qualityPreset: "punchy",
     disclaimer: "Not financial advice. For education only.",
@@ -94,6 +95,7 @@ export function buildVideoInput(scenario: ScenarioInput, angle: CreativeAngle): 
     accentColor: resultColor,
     brandColor: getBrandColor(scenario.ticker) ?? resultColor,
     logoUrl: scenario.logoUrl?.trim() || getBrandLogoUrl(scenario.ticker),
+    chartPoints: scenario.chartPoints,
     visualStyle,
     qualityPreset: PRESET_BY_ANGLE[angle],
     disclaimer: "Not financial advice. For education only.",
@@ -187,14 +189,7 @@ function buildProScenes({
     `That is ${multipleLabel} your money from one boring decision.`,
     "See what you could have made at couldamade.com."
   ];
-  const windows: Array<[number, number]> = [
-    [0, 70],
-    [58, 145],
-    [132, 250],
-    [238, 350],
-    [338, 475],
-    [462, TOTAL_FRAMES]
-  ];
+  const windows = buildVisualWindows(lines);
 
   return lines.map((text, index) => ({
     text,
@@ -202,6 +197,24 @@ function buildProScenes({
     endFrame: windows[index][1],
     emphasis: text.includes(value) ? value : text.includes(multipleLabel) ? multipleLabel : text.includes(amount) ? amount : undefined
   }));
+}
+
+function buildVisualWindows(lines: string[]): Array<[number, number]> {
+  const visualLeadFrames = 10;
+  const minFrames = [58, 70, 92, 86, 104, 120];
+  const durations = lines.map((line, index) => Math.max(minFrames[index] ?? 72, estimateSpokenFrames(line, index) + 12));
+  const total = durations.reduce((sum, duration) => sum + duration, 0);
+  const maxNarrationEnd = 535;
+  const scale = total > maxNarrationEnd ? maxNarrationEnd / total : 1;
+  let cursor = 0;
+
+  return durations.map((duration, index) => {
+    const scaledDuration = Math.round(duration * scale);
+    const start = Math.max(0, cursor - (index === 0 ? 0 : visualLeadFrames));
+    cursor += scaledDuration;
+    const end = index === durations.length - 1 ? TOTAL_FRAMES : Math.max(start + 44, cursor + 8);
+    return [start, end];
+  });
 }
 
 function shortCompanyName(company: string): string {
