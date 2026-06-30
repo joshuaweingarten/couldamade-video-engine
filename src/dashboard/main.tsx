@@ -38,6 +38,7 @@ type ExternalScenario = {
   finalValue: number;
   dataSource?: string;
   logoUrl?: string;
+  chartPoints?: Array<{ date: string; close: number }>;
 };
 
 type CouldaMadeAsset = {
@@ -280,7 +281,8 @@ function App() {
       year: safeDate.getUTCFullYear(),
       month: safeDate.getUTCMonth() + 1,
       day: safeDate.getUTCDate(),
-      logoUrl: external.logoUrl
+      logoUrl: external.logoUrl,
+      chartPoints: external.chartPoints
     };
     setScenario(nextScenario);
     void generateIdeas(nextScenario);
