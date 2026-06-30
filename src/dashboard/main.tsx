@@ -209,7 +209,8 @@ function App() {
         asset: scenario.ticker,
         assetType: scenario.assetType,
         amount: String(scenario.amount),
-        date
+        date,
+        currentValue: String(scenario.value)
       });
       const res = await fetch(`/api/external/calculate?${qs}`, { headers: { Accept: "application/json" } });
       if (!res.ok) throw new Error(await res.text());
