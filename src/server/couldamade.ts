@@ -1,5 +1,5 @@
 import type { Express, Response } from "express";
-import type { ScenarioInput } from "../shared/types";
+import type { ChartPoint, ScenarioInput } from "../shared/types";
 
 const DEFAULT_BASE = "https://couldamade.com";
 const TIMEOUT_MS = 10_000;
@@ -38,6 +38,7 @@ export interface ExternalScenario {
   returnMultiple?: number;
   dataSource?: string;
   logoUrl?: string;
+  chartPoints?: ChartPoint[];
 }
 
 export interface CouldaMadeAsset {
@@ -86,8 +87,9 @@ export function registerCouldaMadeRoutes(app: Express): void {
     const proxied = await proxyGet("/api/calculate", { asset, assetType, amount, date });
     const scenario = scenarioFromProxy(proxied);
     if (scenario) {
-      calculationCache.set(cacheKey, scenario);
-      res.json(scenario);
+      const enriched = await withChartPoints(scenario, asset, assetType, date);
+      calculationCache.set(cacheKey, enriched);
+      res.json(enriched);
       return;
     }
 
@@ -159,6 +161,7 @@ export function externalScenarioToScenario(input: ExternalScenario): ScenarioInp
     month: safeDate.getUTCMonth() + 1,
     day: safeDate.getUTCDate(),
     logoUrl: input.logoUrl,
+    chartPoints: input.chartPoints,
     platform: "tiktok",
     angles: ["regret", "shock", "lesson"]
   };
@@ -252,7 +255,8 @@ function normaliseItem(raw: unknown): ExternalScenario | null {
     finalValue,
     returnMultiple: num(item.multiple) ?? num(item.returnMultiple) ?? num(item.multiplier) ?? finalValue / amountInvested,
     dataSource: str(item.source) ?? str(item.dataSource) ?? str(item.data_source) ?? "couldamade.com",
-    logoUrl: str(item.logoUrl) ?? str(item.logo_url)
+    logoUrl: str(item.logoUrl) ?? str(item.logo_url),
+    chartPoints: normaliseChartPoints(item.chartPoints ?? item.chart_points ?? item.history ?? item.priceHistory ?? item.price_history ?? item.prices)
   };
 }
 
@@ -301,6 +305,35 @@ async function calculateStockFallback(asset: string, assetType: string, amount: 
   if (assetType.toLowerCase() !== "stock") return null;
   const invested = Number.parseFloat(amount);
   if (!Number.isFinite(invested) || invested <= 0) return null;
+
+  const prices = await fetchStockChartPoints(asset, assetType, date);
+  if (!prices || prices.length < 2) return null;
+  const first = prices[0];
+  const last = prices[prices.length - 1];
+  if (first.close <= 0 || last.close <= 0) return null;
+  const finalValue = Math.round((invested / first.close) * last.close);
+  return {
+    asset: localAssetName(asset) ?? asset.toUpperCase(),
+    ticker: asset.toUpperCase(),
+    category: "stock",
+    startDate: first.date,
+    endDate: last.date,
+    amountInvested: Math.round(invested),
+    finalValue,
+    returnMultiple: finalValue / invested,
+    dataSource: "stooq.com fallback",
+    chartPoints: prices
+  };
+}
+
+async function withChartPoints(scenario: ExternalScenario, asset: string, assetType: string, date: string): Promise<ExternalScenario> {
+  if (scenario.chartPoints && scenario.chartPoints.length >= 2) return scenario;
+  const points = await fetchStockChartPoints(asset, assetType, scenario.startDate ?? date);
+  return points && points.length >= 2 ? { ...scenario, chartPoints: points } : scenario;
+}
+
+async function fetchStockChartPoints(asset: string, assetType: string, date: string): Promise<ChartPoint[] | null> {
+  if (assetType.toLowerCase() !== "stock") return null;
   const start = new Date(date);
   if (Number.isNaN(start.getTime())) return null;
 
@@ -319,28 +352,13 @@ async function calculateStockFallback(asset: string, assetType: string, amount: 
     });
     if (!response.ok) return null;
     const prices = parseStooqCsv(await response.text());
-    if (prices.length < 2) return null;
-    const first = prices[0];
-    const last = prices[prices.length - 1];
-    if (first.close <= 0 || last.close <= 0) return null;
-    const finalValue = Math.round((invested / first.close) * last.close);
-    return {
-      asset: localAssetName(asset) ?? asset.toUpperCase(),
-      ticker: asset.toUpperCase(),
-      category: "stock",
-      startDate: first.date,
-      endDate: last.date,
-      amountInvested: Math.round(invested),
-      finalValue,
-      returnMultiple: finalValue / invested,
-      dataSource: "stooq.com fallback"
-    };
+    return prices.length >= 2 ? downsampleChartPoints(prices) : null;
   } catch {
     return null;
   }
 }
 
-function parseStooqCsv(csv: string): Array<{ date: string; close: number }> {
+function parseStooqCsv(csv: string): ChartPoint[] {
   return csv
     .trim()
     .split(/\r?\n/)
@@ -350,6 +368,35 @@ function parseStooqCsv(csv: string): Array<{ date: string; close: number }> {
       return { date, close: Number.parseFloat(close) };
     })
     .filter((row) => row.date && Number.isFinite(row.close));
+}
+
+function normaliseChartPoints(raw: unknown): ChartPoint[] | undefined {
+  const arr = unwrapChartArray(raw);
+  if (!arr) return undefined;
+  const points = arr
+    .map((rawPoint) => {
+      if (!rawPoint || typeof rawPoint !== "object") return null;
+      const point = rawPoint as Record<string, unknown>;
+      const date = str(point.date) ?? str(point.time) ?? str(point.timestamp);
+      const close = num(point.close) ?? num(point.adjClose) ?? num(point.adjustedClose) ?? num(point.price) ?? num(point.value);
+      return date && close && close > 0 ? { date, close } : null;
+    })
+    .filter(Boolean) as ChartPoint[];
+  return points.length >= 2 ? downsampleChartPoints(points) : undefined;
+}
+
+function unwrapChartArray(raw: unknown): unknown[] | null {
+  if (Array.isArray(raw)) return raw;
+  if (!raw || typeof raw !== "object") return null;
+  const obj = raw as Record<string, unknown>;
+  const key = ["chartPoints", "chart_points", "history", "priceHistory", "price_history", "prices", "data"].find((item) => Array.isArray(obj[item]));
+  return key ? (obj[key] as unknown[]) : null;
+}
+
+function downsampleChartPoints(points: ChartPoint[], maxPoints = 220): ChartPoint[] {
+  if (points.length <= maxPoints) return points;
+  const step = (points.length - 1) / (maxPoints - 1);
+  return Array.from({ length: maxPoints }, (_, index) => points[Math.round(index * step)]);
 }
 
 function toStooqSymbol(asset: string): string {
