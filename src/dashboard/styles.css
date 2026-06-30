@@ -432,6 +432,29 @@ textarea:focus {
   font-size: 12px;
 }
 
+.fatal-error {
+  display: grid;
+  gap: 14px;
+  max-width: 720px;
+  margin: 72px auto 0;
+  padding: 28px;
+}
+
+.fatal-error h1 {
+  font-size: 30px;
+  line-height: 1.08;
+}
+
+.fatal-error p:not(.eyebrow) {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.fatal-error .primary-button {
+  width: fit-content;
+  padding: 0 18px;
+}
+
 .library-section {
   display: grid;
   gap: 10px;
