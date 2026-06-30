@@ -71,7 +71,7 @@ export function registerCouldaMadeRoutes(app: Express): void {
   });
 
   app.get("/api/external/calculate", async (req, res) => {
-    const { asset, assetType, amount, date } = req.query as Record<string, string>;
+    const { asset, assetType, amount, date, currentValue } = req.query as Record<string, string>;
     if (!asset || !assetType || !amount || !date) {
       res.status(400).json({ error: "Required: asset, assetType, amount, date" });
       return;
@@ -93,14 +93,14 @@ export function registerCouldaMadeRoutes(app: Express): void {
       return;
     }
 
-    const fallback = await calculateStockFallback(asset, assetType, amount, date);
+    const fallback = await calculateStockFallback(asset, assetType, amount, date, currentValue);
     if (fallback) {
       calculationCache.set(cacheKey, fallback);
       res.json(fallback);
       return;
     }
 
-    sendScenarioError(res, proxied, "CouldaMade/Yahoo is temporarily rate-limited. Try again in a few minutes, or enter the current value manually and generate ideas.");
+    sendScenarioError(res, proxied, "CouldaMade/Yahoo is temporarily rate-limited and the backup calculator could not price this asset. You can still enter the current value manually and generate ideas.");
   });
 
   app.get("/api/external/random", async (_req, res) => {
@@ -301,20 +301,21 @@ function mergeAssets(primary: CouldaMadeAsset[], fallback: CouldaMadeAsset[]): C
   return merged.slice(0, 8);
 }
 
-async function calculateStockFallback(asset: string, assetType: string, amount: string, date: string): Promise<ExternalScenario | null> {
-  if (assetType.toLowerCase() !== "stock") return null;
+async function calculateStockFallback(asset: string, assetType: string, amount: string, date: string, currentValue?: string): Promise<ExternalScenario | null> {
+  if (!isStockLike(assetType)) return calculateManualFallback(asset, assetType, amount, date, currentValue);
   const invested = Number.parseFloat(amount);
   if (!Number.isFinite(invested) || invested <= 0) return null;
 
   const prices = await fetchStockChartPoints(asset, assetType, date);
-  if (!prices || prices.length < 2) return null;
+  if (!prices || prices.length < 2) return calculateManualFallback(asset, assetType, amount, date, currentValue);
   const first = prices[0];
   const last = prices[prices.length - 1];
-  if (first.close <= 0 || last.close <= 0) return null;
+  if (first.close <= 0 || last.close <= 0) return calculateManualFallback(asset, assetType, amount, date, currentValue);
   const finalValue = Math.round((invested / first.close) * last.close);
+  const ticker = resolveAssetTicker(asset) ?? asset.toUpperCase();
   return {
-    asset: localAssetName(asset) ?? asset.toUpperCase(),
-    ticker: asset.toUpperCase(),
+    asset: localAssetName(asset) ?? ticker,
+    ticker,
     category: "stock",
     startDate: first.date,
     endDate: last.date,
@@ -333,29 +334,32 @@ async function withChartPoints(scenario: ExternalScenario, asset: string, assetT
 }
 
 async function fetchStockChartPoints(asset: string, assetType: string, date: string): Promise<ChartPoint[] | null> {
-  if (assetType.toLowerCase() !== "stock") return null;
+  if (!isStockLike(assetType)) return null;
   const start = new Date(date);
   if (Number.isNaN(start.getTime())) return null;
 
-  const symbol = toStooqSymbol(asset);
   const startParam = compactDate(start);
   const endParam = compactDate(new Date());
-  const url = `https://stooq.com/q/d/l/?s=${encodeURIComponent(symbol)}&d1=${startParam}&d2=${endParam}&i=d`;
+  const symbols = toStooqSymbols(asset);
 
-  try {
-    const response = await fetch(url, {
-      headers: {
-        Accept: "text/csv",
-        "User-Agent": "CouldaMade-VideoFactory/1.0"
-      },
-      signal: AbortSignal.timeout(TIMEOUT_MS)
-    });
-    if (!response.ok) return null;
-    const prices = parseStooqCsv(await response.text());
-    return prices.length >= 2 ? downsampleChartPoints(prices) : null;
-  } catch {
-    return null;
+  for (const symbol of symbols) {
+    const url = `https://stooq.com/q/d/l/?s=${encodeURIComponent(symbol)}&d1=${startParam}&d2=${endParam}&i=d`;
+    try {
+      const response = await fetch(url, {
+        headers: {
+          Accept: "text/csv",
+          "User-Agent": "CouldaMade-VideoFactory/1.0"
+        },
+        signal: AbortSignal.timeout(TIMEOUT_MS)
+      });
+      if (!response.ok) continue;
+      const prices = parseStooqCsv(await response.text());
+      if (prices.length >= 2) return downsampleChartPoints(prices);
+    } catch {
+      continue;
+    }
   }
+  return null;
 }
 
 function parseStooqCsv(csv: string): ChartPoint[] {
@@ -399,9 +403,51 @@ function downsampleChartPoints(points: ChartPoint[], maxPoints = 220): ChartPoin
   return Array.from({ length: maxPoints }, (_, index) => points[Math.round(index * step)]);
 }
 
-function toStooqSymbol(asset: string): string {
-  const cleaned = asset.trim().toLowerCase().replace(/[^a-z0-9.-]/g, "");
-  return cleaned.includes(".") ? cleaned : `${cleaned}.us`;
+function calculateManualFallback(asset: string, assetType: string, amount: string, date: string, currentValue?: string): ExternalScenario | null {
+  const invested = Number.parseFloat(amount);
+  const finalValue = currentValue ? Number.parseFloat(currentValue) : NaN;
+  const start = new Date(date);
+  if (!Number.isFinite(invested) || invested <= 0 || !Number.isFinite(finalValue) || finalValue <= 0 || Number.isNaN(start.getTime())) {
+    return null;
+  }
+
+  const ticker = resolveAssetTicker(asset) ?? asset.toUpperCase();
+  return {
+    asset: localAssetName(asset) ?? ticker,
+    ticker,
+    category: assetType,
+    startDate: date,
+    endDate: new Date().toISOString().slice(0, 10),
+    amountInvested: Math.round(invested),
+    finalValue: Math.round(finalValue),
+    returnMultiple: finalValue / invested,
+    dataSource: "manual value fallback"
+  };
+}
+
+function isStockLike(assetType: string): boolean {
+  const value = assetType.trim().toLowerCase();
+  return ["stock", "stocks", "equity", "equities", "etf", "fund"].includes(value);
+}
+
+function toStooqSymbols(asset: string): string[] {
+  const candidates = [resolveAssetTicker(asset), asset]
+    .filter(Boolean)
+    .map((value) => String(value).trim().toLowerCase().replace(/[^a-z0-9.-]/g, ""))
+    .filter(Boolean)
+    .map((value) => value.includes(".") ? value : `${value}.us`);
+  return [...new Set(candidates)];
+}
+
+function resolveAssetTicker(asset: string): string | undefined {
+  const ticker = asset.trim().toUpperCase().replace(/[^A-Z0-9.-]/g, "");
+  const cleanedName = cleanAssetName(asset).toLowerCase();
+  const match = LOCAL_ASSETS.find((item) => {
+    const itemTicker = item.asset.toUpperCase();
+    const itemName = cleanAssetName(item.name ?? item.asset).toLowerCase();
+    return itemTicker === ticker || itemName === cleanedName;
+  });
+  return match?.asset.toUpperCase() ?? (ticker.length <= 8 ? ticker : undefined);
 }
 
 function compactDate(date: Date): string {
@@ -409,7 +455,15 @@ function compactDate(date: Date): string {
 }
 
 function localAssetName(asset: string): string | undefined {
-  return LOCAL_ASSETS.find((item) => item.asset.toLowerCase() === asset.toLowerCase())?.name;
+  const ticker = resolveAssetTicker(asset);
+  return LOCAL_ASSETS.find((item) => item.asset.toUpperCase() === ticker)?.name;
+}
+
+function cleanAssetName(asset: string): string {
+  return asset
+    .replace(/,?\s+(inc\.?|corp\.?|corporation|company|co\.?|ltd\.?|limited|llc|plc|holdings?|group)$/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function unwrapSingle(body: unknown): unknown {
